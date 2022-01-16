@@ -1,5 +1,6 @@
 local fn = vim.fn
 local shared = require('snippy.shared')
+local list_dirs = require('snippy.directories').list_dirs
 
 local M = {}
 
@@ -131,18 +132,6 @@ local function read_snippet_file(snippet_file, scope)
             body = body,
         },
     }
-end
-
-local function list_dirs()
-    local dirs = shared.config.snippet_dirs
-    if not dirs then
-        local rtp = table.concat(vim.api.nvim_list_runtime_paths(), ',')
-        dirs = vim.fn.globpath(rtp, 'snippets/', 0, 1)
-    end
-    if type(dirs) ~= 'string' then
-        dirs = table.concat(dirs, ',')
-    end
-    return dirs
 end
 
 local function list_files(ftype)
