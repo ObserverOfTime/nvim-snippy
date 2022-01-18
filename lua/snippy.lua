@@ -144,6 +144,16 @@ local function place_stops(stops)
     end
 end
 
+local function add_empty_lines(text, n)
+    local ln = api.nvim_win_get_cursor(0)[1]
+    while n > 0 and fn.getline(ln + 1) ~= '' do
+        text = text .. '\n'
+        ln = ln + 1
+        n = n - 1
+    end
+    return text
+end
+
 -- Snippet management
 
 local function get_snippet_at_cursor(auto_trigger)
@@ -435,6 +445,9 @@ function M.parse_snippet(snippet)
     if type(snippet) == 'table' then
         -- Structured snippet
         text = table.concat(snippet.body, '\n')
+        if snippet.option and snippet.option.empty_lines then
+          text = add_empty_lines(text, snippet.option.empty_lines)
+        end
         if snippet.kind == 'snipmate' then
             ok, parsed, pos = parser.parse_snipmate(text, 1)
         else

@@ -110,10 +110,10 @@ Files with the `.snippet` extension contain a single snippet each, whereas
 files with the `.snippets` extension can be used to declare multiple snippets
 using the following format:
 >
-    snippet trigger1 "Description for snippet 1" [option]
+    snippet trigger1 "Description for snippet 1" [options]
     	This is the first line.
     	This is the second line.
-    snippet trigger2 "Description for snippet 2" [option]
+    snippet trigger2 "Description for snippet 2" [options]
     	This is the first line.
     	This is the second line.
 <
@@ -125,6 +125,8 @@ optional. Currently supported are the following:
         only part of the word, up to the cursor.
     - `b` Beginning of line - The snippet is only expanded if its trigger is
         the first word on the line, only preceeded by whitespace.
+    - `_` Ensure empty lines - ensure a number of empty lines after the
+        snippet equal to the number of underscores in the snippet options.
     - `A` Autotrigger - The snippet is expanded automatically when the trigger
         is typed. Note that this feature may degrade the performance of your
         editor when used.

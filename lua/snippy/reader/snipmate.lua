@@ -13,14 +13,17 @@ local exprs = {
 
 -- Loading
 
-local function parse_options(prefix, line)
-    local opt = line:match(' (%w+)$') or ''
+local function parse_options(prefix, opt)
+    if not opt then
+        return {}
+    end
     local word = opt:find('w') and true
     local inword = opt:find('i') and true
     local beginning = opt:find('b') and true
     local auto = opt:find('A') and true
+    local lines = opt:match('_') and opt:match('_+'):len()
 
-    local invalid = opt:match('[^bwiA]')
+    local invalid = opt:match('[^bwiA_]')
     if invalid then
         error(string.format('Unknown option %s in snippet %s', invalid, prefix))
     end
@@ -35,6 +38,7 @@ local function parse_options(prefix, line)
         inword = inword,
         beginning = beginning,
         auto_trigger = auto,
+        empty_lines = lines
     }
 end
 
@@ -53,7 +57,7 @@ local function read_snippets_file(snippets_file)
         local prefix = line:match('%s+(%S+)%s*')
         assert(prefix, 'prefix is nil: ' .. line .. ', file: ' .. snippets_file)
         local description = line:match('%s*"(.+)"%s*')
-        local option = description and parse_options(prefix, line) or {}
+        local option = parse_options(prefix, line:match('%s+%S+%s+([bwiA_]+)$'))
         if option.auto_trigger then
             shared.enable_auto = true
         end
