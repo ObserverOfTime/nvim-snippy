@@ -210,7 +210,16 @@ end
 
 -- Autocmd handlers
 
+local function did_undo()
+    local ut = fn.undotree()
+    return ut.seq_last ~= ut.seq_cur
+end
+
 function M._handle_TextChanged()
+    if did_undo() then
+        buf.clear_state()
+        return
+    end
     buf.fix_current_stop()
     buf.update_state()
     M._mirror_stops()
