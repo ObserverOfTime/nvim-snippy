@@ -202,8 +202,17 @@ function Builder:process_structure(structure, parent)
                         parent = parent,
                     })
                 elseif value.type == 'eval' then
-                    local code = value.children[1].raw
-                    local ok, result = pcall(fn.eval, code)
+                    local code, ok, result = value.children[1].raw, false, ''
+                    if code:sub(1,1) == '!' then
+                        ok, result = pcall(fn.system, code:sub(2))
+                        if ok then
+                            result = result:gsub('\n+$', '')
+                            local lines = vim.split(result, '\n', true)
+                            result = table.concat(self:indent_lines(lines, fn.indent(fn.line('.'))), '\n')
+                        end
+                    else
+                        ok, result = pcall(fn.eval, code)
+                    end
                     if ok then
                         self:append_text(result)
                     else
