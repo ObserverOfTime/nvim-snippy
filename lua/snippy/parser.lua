@@ -110,10 +110,10 @@ end
 --  SnipMate parser
 
 local function create_snipmate_parser()
-    local eval, visual, placeholder
+    local eval, visual, placeholder, variable
 
     local any = lazy(function()
-        return one(tabstop, placeholder, visual, choice, eval, sigil)
+        return one(tabstop, placeholder, variable, visual, choice, eval, sigil)
     end)
 
     local inner = opt(many(one(any, text('[$}`]', ''))))
@@ -122,6 +122,22 @@ local function create_snipmate_parser()
         local children = #value == 6 and value[5] or {}
         return { type = 'placeholder', id = value[3], children = children }
     end)
+
+    variable = one(
+        map(seq(sigil, varname), function(value)
+            return { type = 'variable', name = value[2], children = {} }
+        end),
+        map(seq(sigil, open, varname, close), function(value)
+            return { type = 'variable', name = value[3], children = {} }
+        end),
+        map(seq(sigil, open, varname, colon, inner, close), function(value)
+            local children = #value == 6 and value[5] or {}
+            return { type = 'variable', name = value[3], children = children }
+        end),
+        map(seq(sigil, open, varname, transform, close), function(value)
+            return { type = 'variable', name = value[3], transform = value[4], children = {} }
+        end)
+    )
 
     local visual_token = token('VISUAL')
 

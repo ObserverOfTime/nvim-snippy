@@ -158,7 +158,9 @@ end
 function Builder:evaluate_variable(variable)
     local result = varmap[variable.name] and varmap[variable.name]()
     if not result then
-        self:process_structure(variable.children)
+        variable.type = 'placeholder'
+        variable.id = variable.name
+        self:process_structure({ variable })
     else
         self:append_text(result, true)
     end
