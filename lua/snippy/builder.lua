@@ -4,10 +4,10 @@ local fn = vim.fn
 
 local varmap = {
     TM_SELECTED_TEXT = function()
-        return shared.selected_text or ''
+        return shared.selected_text or false
     end,
     VISUAL = function()
-        return shared.selected_text or ''
+        return shared.selected_text or false
     end,
     TM_CURRENT_LINE = function()
         return vim.api.nvim_get_current_line()
@@ -158,7 +158,7 @@ end
 function Builder:evaluate_variable(variable)
     local result = varmap[variable.name] and varmap[variable.name]()
     if not result then
-        variable.type = 'placeholder'
+        variable.type = result == false and 'tabstop' or 'placeholder'
         self:process_structure({ variable })
     else
         self:append_text(result, true)

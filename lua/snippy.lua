@@ -484,6 +484,9 @@ function M.parse_snippet(snippet)
           text = add_empty_lines(text, snippet.option.empty_lines)
         end
         if snippet.kind == 'snipmate' then
+            if shared.config.vvv_visual then
+                text = text:gsub('vvv', '$VISUAL')
+            end
             ok, parsed, pos = parser.parse_snipmate(text, 1)
         else
             ok, parsed, pos = parser.parse(text, 1)

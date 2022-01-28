@@ -28,10 +28,10 @@ local default_config = {
     scopes = {},
     mappings = {},
     choice_delay = 100,
+    vvv_visual = true,
 }
 
 M.get_scopes = get_scopes
-M.selected_text = ''
 M.namespace = vim.api.nvim_create_namespace('snippy')
 M.config = vim.tbl_extend('force', {}, default_config)
 M.buffer_config = {}
