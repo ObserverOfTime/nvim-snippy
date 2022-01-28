@@ -4,18 +4,15 @@ INIT_LUAROCKS := eval $$(luarocks --lua-version=5.1 path) &&
 
 # .DEFAULT_GOAL := build
 
-NEOVIM_BRANCH ?= stable
-
-neovim:
-	git clone --depth 1 https://github.com/neovim/neovim --branch $(NEOVIM_BRANCH)
-	make -C $@
+NEOVIM_DIR := ~/.local/builds/neovim
 
 vim-snippets:
 	git clone --depth 1 https://github.com/honza/vim-snippets
 
 export TEST_COLORS=1
 
-functionaltest: neovim vim-snippets
+functionaltest: vim-snippets
+	ln -s $(NEOVIM_DIR)
 	$(INIT_LUAROCKS) VIMRUNTIME=$(PWD)/neovim/runtime \
 		neovim/.deps/usr/bin/busted \
 		-v \
@@ -29,7 +26,7 @@ functionaltest: neovim vim-snippets
 		--lpath=$(PWD)/?.lua \
 		--lpath=$(PWD)/lua/?.lua \
 		--filter=$(FILTER) \
-		$(PWD)/test/functional
+		$(PWD)/test/functional; rm neovim
 
 	-@stty sane
 
