@@ -68,7 +68,6 @@ describe('Snippet reader', function()
         assert.is_truthy(require('snippy.shared').config.snippet_dirs)
         assert.is_not.same({}, require('snippy.reader.snipmate').list_available_scopes())
         assert.is_same({ beginning = true }, snippy.snippets.java.cls.option)
-        assert.is_same({ auto_trigger = true }, snippy.snippets.java.psvm.option)
     end)
 
     it('can read vim-snippets snippets', function()

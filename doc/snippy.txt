@@ -127,9 +127,6 @@ optional. Currently supported are the following:
         the first word on the line, only preceeded by whitespace.
     - `_` Ensure empty lines - ensure a number of empty lines after the
         snippet equal to the number of underscores in the snippet options.
-    - `A` Autotrigger - The snippet is expanded automatically when the trigger
-        is typed. Note that this feature may degrade the performance of your
-        editor when used.
 
                                                       *snippy-usage-indenting*
 

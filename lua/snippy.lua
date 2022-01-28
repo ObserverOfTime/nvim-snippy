@@ -156,7 +156,7 @@ end
 
 -- Snippet management
 
-local function get_snippet_at_cursor(auto_trigger)
+local function get_snippet_at_cursor()
     M.read_snippets()
     local _, col = unpack(api.nvim_win_get_cursor(0))
 
@@ -164,12 +164,6 @@ local function get_snippet_at_cursor(auto_trigger)
     local current_line_to_col = api.nvim_get_current_line():sub(1, col):gsub('^%s*', '')
 
     if current_line_to_col then
-        if auto_trigger then
-            if not Snippy_last_char or not vim.endswith(current_line_to_col, Snippy_last_char) then
-                return nil, nil
-            end
-        end
-
         local word = current_line_to_col:match('(%S*)$') -- Remove leading whitespace
         local word_bound = true
         local scopes = shared.get_scopes()
@@ -178,24 +172,19 @@ local function get_snippet_at_cursor(auto_trigger)
                 if scope and M.snippets[scope] then
                     if M.snippets[scope][word] then
                         local snippet = M.snippets[scope][word]
-                        if
-                            auto_trigger and snippet.option.auto_trigger
-                            or not auto_trigger and not snippet.option.auto_trigger
-                        then
-                            if snippet.option.inword then
-                                -- Match inside word
-                                return word, snippet
-                            elseif snippet.option.beginning then
-                                -- Match if word is first on line
-                                if word == current_line_to_col then
-                                    return word, snippet
-                                end
-                            else
-                                if word_bound then
-                                    -- By default only match on word boundary
-                                    return word, snippet
-                                end
-                            end
+                        if snippet.option.inword then
+                          -- Match inside word
+                          return word, snippet
+                        elseif snippet.option.beginning then
+                          -- Match if word is first on line
+                          if word == current_line_to_col then
+                            return word, snippet
+                          end
+                        else
+                          if word_bound then
+                            -- By default only match on word boundary
+                            return word, snippet
+                          end
                         end
                     end
                 end
@@ -499,8 +488,8 @@ function M.expand_or_advance()
     return M.expand() or M.next()
 end
 
-function M.expand(auto)
-    local word, snippet = get_snippet_at_cursor(auto)
+function M.expand()
+    local word, snippet = get_snippet_at_cursor()
     Snippy_last_char = nil
     if word and snippet then
         return M.expand_snippet(snippet, word)
@@ -508,8 +497,8 @@ function M.expand(auto)
     return false
 end
 
-function M.can_expand(auto)
-    local word, snip = get_snippet_at_cursor(auto)
+function M.can_expand()
+    local word, snip = get_snippet_at_cursor()
     if word and snip then
         return true
     else
@@ -558,19 +547,9 @@ M.readers = {
 }
 
 function M.read_snippets()
-    shared.enable_auto = false
     for _, reader in ipairs(M.readers) do
         local snips = reader.read_snippets()
         M.snippets = vim.tbl_extend('force', M.snippets, snips)
-        if shared.enable_auto then
-            vim.cmd([[
-                augroup snippy_auto
-                autocmd!
-                autocmd TextChangedI,TextChangedP * lua require 'snippy'.expand(true)
-                autocmd InsertCharPre * lua Snippy_last_char = vim.v.char
-                augroup END
-            ]])
-        end
     end
 end
 

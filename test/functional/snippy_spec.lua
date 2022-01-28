@@ -153,22 +153,6 @@ describe('Snippy', function()
         eq(true, exec_lua([[return snippy.is_active()]]))
     end)
 
-    it('can expand automatically', function()
-        setup_test_snippets()
-        command('set filetype=java')
-        feed('ipsvm')
-        eq(true, exec_lua([[return snippy.is_active()]]))
-        screen:expect({
-            grid = [[
-          public static void main(String[] ^a{3:rgs}) {                                         |
-                                                                                           |
-          }                                                                                |
-          {1:~                                                                                }|
-          {2:-- SELECT --}                                                                     |
-        ]],
-        })
-    end)
-
     it('can jump back', function()
         command('set filetype=')
         feed('i')
