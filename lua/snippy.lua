@@ -98,14 +98,52 @@ local function mirror_stop(number)
     end
 end
 
+--- Create ids for id-less tabstops and named placeholders.
+--- @param stops table
+local function create_missing_ids(stops)
+    local max_id = 0
+    -- find the maximum numbered tabstop/placeholder
+    -- numberless tabstops/placeholders will come after those
+    for _, stop in ipairs(stops) do
+        if stop.id then
+            if max_id < stop.id then
+                max_id = stop.id
+            end
+        end
+    end
+    -- create ids for yet id-less stops
+    for _, stop in ipairs(stops) do
+        if not stop.id then
+            max_id = max_id + 1
+            if stop.name then
+                for _, st in ipairs(stops) do
+                    if st.name == stop.name then
+                        st.id = max_id
+                    end
+                end
+            else
+                stop.id = max_id
+            end
+        end
+    end
+end
+
+--- Sort the tabstops. If id == 0, it comes last, if ids are different, lower
+--- id comes first. If it's the same named placeholder, the one with a default
+--- value comes first.
+--- @param stops table: the unsorted tabstops
+--- @return table: sorted tabstops
 local function sort_stops(stops)
     table.sort(stops, function(s1, s2)
         if s1.id == 0 then
             return false
+        elseif s1.name and s1.name == s2.name then
+            return ( next(s1.children) and not next(s2.children) )
+        elseif s2.name and s1.name == s2.name then
+            return ( next(s2.children) and not next(s1.children) )
         elseif s2.id == 0 then
             return true
-        end
-        if s1.id < s2.id then
+        elseif s1.id < s2.id then
             return true
         elseif s1.id > s2.id then
             return false
@@ -135,6 +173,7 @@ local function make_unique_ids(stops)
 end
 
 local function place_stops(stops)
+    create_missing_ids(stops)
     sort_stops(stops)
     make_unique_ids(stops)
     local pos = buf.current_stop + 1

@@ -15,6 +15,8 @@ local trim = (vim and vim.trim) or function(s)
     return string.gsub(s, '^%s*(.-)%s*$', '%1')
 end
 
+local M = {}
+
 -- Tokens
 local sigil = token('$')
 local open = token('{')
@@ -37,13 +39,11 @@ local text = function(stop, escape)
     end)
 end
 
-local tabstop, choice, transform
-
 local flags = map(seq(slash, pattern('^[ig]*')), function(value)
     return value[2]
 end)
 
-transform = map(seq(slash, text('/', ''), slash, text('[%/}]', ''), opt(flags)), function(value)
+local transform = map(seq(slash, text('/', ''), slash, text('[%/}]', ''), opt(flags)), function(value)
     return {
         type = 'transform',
         regex = value[2],
@@ -52,7 +52,11 @@ transform = map(seq(slash, text('/', ''), slash, text('[%/}]', ''), opt(flags)),
     }
 end)
 
-tabstop = one(
+local generic = map(seq(token('___')), function(_)
+    return { type = 'tabstop', children = {} }
+end)
+
+local tabstop = one(
     map(seq(sigil, int), function(value)
         return { type = 'tabstop', id = value[2], children = {} }
     end),
@@ -68,7 +72,7 @@ local options = many(map(seq(text('[,|]', ''), opt(comma)), function(value)
     return trim(value[1].escaped)
 end))
 
-choice = map(seq(sigil, open, int, bar, options, bar, close), function(value)
+local choice = map(seq(sigil, open, int, bar, options, bar, close), function(value)
     return { type = 'choice', id = value[3], choices = value[5], children = { value[5][1] } }
 end)
 
@@ -113,7 +117,7 @@ local function create_snipmate_parser()
     local eval, visual, placeholder, variable
 
     local any = lazy(function()
-        return one(tabstop, placeholder, variable, visual, choice, eval, sigil)
+        return one(generic, tabstop, placeholder, variable, visual, choice, eval, sigil)
     end)
 
     local inner = opt(many(one(any, text('[$}`]', ''))))
@@ -158,13 +162,10 @@ local function create_snipmate_parser()
         return { type = 'eval', children = { value[2] } }
     end)
 
-    return many(one(any, text('[%$`]', '}')))
+    return many(one(any, text('[_%$`]', '}')))
 end
 
-local parse = create_parser()
-local parse_snipmate = create_snipmate_parser()
+M.parse = create_parser()
+M.parse_snipmate = create_snipmate_parser()
 
-return {
-    parse = parse,
-    parse_snipmate = parse_snipmate,
-}
+return M

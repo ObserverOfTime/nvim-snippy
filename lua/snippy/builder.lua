@@ -4,10 +4,10 @@ local fn = vim.fn
 
 local varmap = {
     TM_SELECTED_TEXT = function()
-        return shared.selected_text
+        return shared.selected_text or ''
     end,
     VISUAL = function()
-        return shared.selected_text
+        return shared.selected_text or ''
     end,
     TM_CURRENT_LINE = function()
         return vim.api.nvim_get_current_line()
@@ -159,7 +159,6 @@ function Builder:evaluate_variable(variable)
     local result = varmap[variable.name] and varmap[variable.name]()
     if not result then
         variable.type = 'placeholder'
-        variable.id = variable.name
         self:process_structure({ variable })
     else
         self:append_text(result, true)
@@ -185,6 +184,8 @@ function Builder:process_structure(structure, parent)
                     table.insert(self.stops, {
                         type = value.type,
                         id = value.id,
+                        name = value.name,
+                        children = value.children,
                         startpos = { startrow, startcol },
                         endpos = { self.row, self.col },
                         parent = parent,
