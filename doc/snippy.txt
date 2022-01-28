@@ -111,22 +111,31 @@ files with the `.snippets` extension can be used to declare multiple snippets
 using the following format:
 >
     snippet trigger1 "Description for snippet 1" [options]
-    	This is the first line.
-    	This is the second line.
+        This is the first line.
+        This is the second line.
     snippet trigger2 "Description for snippet 2" [options]
-    	This is the first line.
-    	This is the second line.
+        This is the first line.
+        This is the second line.
 <
 The `option`s control the behavior of the expansion of the snippet and are
 optional. Currently supported are the following:
-    - `w` Word boundary - The word expands only when the trigger is on a word
-        boundary. This is the default behavior.
-    - `i` In-word expansion - The snippet gets expanded even if the trigger is
-        only part of the word, up to the cursor.
-    - `b` Beginning of line - The snippet is only expanded if its trigger is
+
+    `w  ` Word boundary: the word expands only when the trigger is on a word
+        boundary. This is the default behavior and can be omitted.
+
+    `i  ` In-word expansion: the snippet expands even if the trigger is only
+        part of the word, up to the cursor.
+
+    `b  ` Beginning of line: the snippet is only expanded if its trigger is
         the first word on the line, only preceeded by whitespace.
-    - `_` Ensure empty lines - ensure a number of empty lines after the
-        snippet equal to the number of underscores in the snippet options.
+
+    `^  ` Column 1: as above, but also without preceding whitespace.
+
+    `#  ` Beginning of file: the snippet can expand only at the first column
+        of the first line.
+
+    `_  ` Ensure empty lines: ensure a number of empty lines after the snippet
+        equal to the number of underscores in the snippet options.
 
                                                       *snippy-usage-indenting*
 
@@ -137,7 +146,7 @@ there is no mixing of tabs and spaces. If you want Neovim to indent your
 custom snippets with two spaces, for example, create a file
 `after/ftplugin/snippets.vim` and add the following: >
 
-    setlocal expandtab tabstop=2 sw=2 
+    setlocal expandtab tabstop=2 sw=2
 <
 This could also be achieved with an |autocmd|. Identing with spaces is a
 Snippy feature and might not be compatible with other snippet plugins like
@@ -196,7 +205,7 @@ SnipMate syntax is also based on the TextMate syntax and so largely compatible
 with the LSP syntax. A basic SniMate-style snippet looks like this:
 >
     for (${1:i} = 0; $1 < ${2:limit}; $1++) {
-    	System.out.println($1);
+        System.out.println($1);
     }
 <
                                                         *snippy-snipmate-eval*
@@ -367,7 +376,7 @@ mappings~
                 ["<Tab>"] = "expand_or_advance",
                 ...
             }
-            -- Same, with string as identifier for modes 
+            -- Same, with string as identifier for modes
             is = {
                 ["<Tab>"] = "expand_or_advance",
                 ...
@@ -424,4 +433,4 @@ Snippy is licensed under the MIT license.
 
 
 ==============================================================================
-vim:tw=78:ts=8:ft=help:norl:
+vim:tw=78:et:ts=4:ft=help:norl:

@@ -158,40 +158,47 @@ end
 
 local function get_snippet_at_cursor()
     M.read_snippets()
-    local _, col = unpack(api.nvim_win_get_cursor(0))
+    local lnum, col = unpack(api.nvim_win_get_cursor(0))
 
-    -- Remove leading whitespace for current_line_to_col
-    local current_line_to_col = api.nvim_get_current_line():sub(1, col):gsub('^%s*', '')
+    local current_line_to_col = api.nvim_get_current_line():sub(1, col)
+    local word = current_line_to_col:match('(%S*)$')
+    local bol = word == current_line_to_col
+    local bof = lnum == 1 and word == current_line_to_col
+    local word_bound = true
+    local scopes = shared.get_scopes()
 
-    if current_line_to_col then
-        local word = current_line_to_col:match('(%S*)$') -- Remove leading whitespace
-        local word_bound = true
-        local scopes = shared.get_scopes()
-        while #word > 0 do
-            for _, scope in ipairs(scopes) do
-                if scope and M.snippets[scope] then
-                    if M.snippets[scope][word] then
-                        local snippet = M.snippets[scope][word]
-                        if snippet.option.inword then
-                          -- Match inside word
-                          return word, snippet
-                        elseif snippet.option.beginning then
-                          -- Match if word is first on line
-                          if word == current_line_to_col then
+    while #word > 0 do
+        for _, scope in ipairs(scopes) do
+            if scope and M.snippets[scope] then
+                if M.snippets[scope][word] then
+                    local snippet = M.snippets[scope][word]
+                    if snippet.option.inword then
+                        -- Match inside word
+                        return word, snippet
+                    elseif snippet.option.bof then
+                        -- Match if word is first on file
+                        if bof then
                             return word, snippet
-                          end
-                        else
-                          if word_bound then
-                            -- By default only match on word boundary
-                            return word, snippet
-                          end
                         end
+                    elseif snippet.option.bol then
+                        -- Match if word is first on line (absolute)
+                        if bol then
+                            return word, snippet
+                        end
+                    elseif snippet.option.beginning then
+                        -- Match if word is first on line (trimmed)
+                        if word == current_line_to_col:gsub('^%s*', '') then
+                            return word, snippet
+                        end
+                    elseif word_bound then
+                        -- By default only match on word boundary
+                        return word, snippet
                     end
                 end
             end
-            word = word:sub(2)
-            word_bound = false
         end
+        word = word:sub(2)
+        word_bound = false
     end
     return nil, nil
 end

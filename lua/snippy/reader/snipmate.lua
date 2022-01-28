@@ -16,25 +16,24 @@ local exprs = {
 
 local function parse_options(prefix, opt)
     if not opt then
-        return {}
+        return { word = true }
     end
-    local word = opt:find('w') and true
     local inword = opt:find('i') and true
     local beginning = opt:find('b') and true
+    local bof = opt:find('%#') and true
+    local bol = opt:find('%^') and true
+    local word = not inword and not beginning and not bof and not bol
     local lines = opt:match('_') and opt:match('_+'):len()
 
-    local invalid = opt:match('[^bwi_]')
+    local invalid = opt:match('[^b^#wi_]')
     if invalid then
         error(string.format('Unknown option %s in snippet %s', invalid, prefix))
     end
 
-    assert(
-        not ((word and inword) or (word and beginning) or (inword and beginning)),
-        'Options [w, i, b] cannot be combined'
-    )
-
     return {
         word = word,
+        bol = bol,
+        bof = bof,
         inword = inword,
         beginning = beginning,
         empty_lines = lines
@@ -56,7 +55,7 @@ local function read_snippets_file(snippets_file)
         local prefix = line:match('%s+(%S+)%s*')
         assert(prefix, 'prefix is nil: ' .. line .. ', file: ' .. snippets_file)
         local description = line:match('%s*"(.+)"%s*')
-        local option = parse_options(prefix, line:match('%s+%S+%s+([bwi_]+)$'))
+        local option = parse_options(prefix, line:match('%s+%S+%s+([b^#wi_]+)$'))
         local body = {}
         local indent = nil
         i = i + 1
@@ -78,6 +77,10 @@ local function read_snippets_file(snippets_file)
             else
                 break
             end
+        end
+        -- allow an empty line after the snippet body
+        if body[#body] == '' then
+          table.remove(body)
         end
         snips[prefix] = {
             kind = 'snipmate',
