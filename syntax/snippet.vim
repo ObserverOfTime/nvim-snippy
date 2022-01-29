@@ -1,19 +1,21 @@
 " Syntax highlighting for .snippet files (used for snipMate.vim)
 " Hopefully this should make snippets a bit nicer to write!
-syn match placeHolder '\${\d\+\(:.\{-}\)\=}' contains=snipCommand
-syn match tabStop '\$\d\+'
+
+syn region snipPh matchgroup=Special start='\${\w\+:' end='}' contains=snipPhSel
+syn match snipStop '\$\d\+\|___\|vvv'
 syn match snipEscape '\\\\\|\\`'
-syn match snipCommand '\%(\\\@<!\%(\\\\\)*\)\@<=`.\{-}\%(\\\@<!\%(\\\\\)*\)\@<=`'
+syn match snipPhSel '.\{-}\ze}' contained
+syn match snipEval '`.\{-}`'
+syn match snipVariable '$\v(VISUAL|TM_\w+)'
 
-syn region choice start='\${\d\+|' end='|}' contains=choiceValue
-syn match choiceValue '[|,]\zs[^,|]\+\ze[|,]' contained
+syn region snipChoice start='\${\d\+|' end='|}' contains=snipChoiceVal
+syn match snipChoiceVal '[|,]\zs[^,|]\+\ze[|,]' contained
 
-syn match transform '\${\d\+/.\{-}/.\{-}/\=}'
-
-hi link placeHolder   Special
-hi link tabStop       Special
-hi link snipEscape    SpecialChar
-hi link snipCommand   String
-hi link choice        Special
-hi link choiceValue   Keyword
-hi link transform     Special
+hi default link snipEscape    SpecialChar
+hi default link snipChoice    Special
+hi default link snipChoiceVal Keyword
+hi default link snipTrans     Special
+hi default link snipStop      Special
+hi default link snipPhSel     String
+hi default link snipEval      Special
+hi default link snipVariable  PreProc
