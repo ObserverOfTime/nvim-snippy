@@ -66,21 +66,21 @@ It's also possible to define options for a specific buffer using the
 Snippy comes with no mappings activated by default. So you'll want to define
 some, probably.
 
-For example, to use `<Tab>` to expand and jump forward, `<S-Tab` to jump back:
+For example, to use `<Tab>` to expand and jump forward, `<S-Tab>` to jump back:
 >
-    imap <expr> <Tab> snippy#can_expand_or_advance() ? '<Plug>(snippy-expand-or-advance)' : '<Tab>'
+    imap <expr> <Tab>   snippy#can_expand_or_advance() ? '<Plug>(snippy-expand-or-advance)' : '<Tab>'
     imap <expr> <S-Tab> snippy#can_jump(-1) ? '<Plug>(snippy-previous)' : '<S-Tab>'
-    smap <expr> <Tab> snippy#can_jump(1) ? '<Plug>(snippy-next)' : '<Tab>'
+    smap <expr> <Tab>   snippy#can_jump(1) ? '<Plug>(snippy-next)' : '<Tab>'
     smap <expr> <S-Tab> snippy#can_jump(-1) ? '<Plug>(snippy-previous)' : '<S-Tab>'
 <
 Of course, you can also define different mappings to expand and jump forward.
 To expand with `<C-]>`, jump forward with `<C-j>`, and jump back with `<C-k>`,
 set it up like this:
 >
-    imap <expr> <C-]> snippy#can_expand() ? '<Plug>(snippy-expand)' : '<C-]>'
-    imap <expr> <C-j> snippy#can_jump(1) ? '<Plug>(snippy-next)' : '<C-j>'
+    imap <expr> <C-]> snippy#can_expand() ? '<Plug>(snippy-expand)'   : '<C-]>'
+    imap <expr> <C-j> snippy#can_jump(1)  ? '<Plug>(snippy-next)'     : '<C-j>'
     imap <expr> <C-k> snippy#can_jump(-1) ? '<Plug>(snippy-previous)' : '<C-k>'
-    smap <expr> <C-j> snippy#can_jump(1) ? '<Plug>(snippy-next)' : '<C-j>'
+    smap <expr> <C-j> snippy#can_jump(1)  ? '<Plug>(snippy-next)'     : '<C-j>'
     smap <expr> <C-k> snippy#can_jump(-1) ? '<Plug>(snippy-previous)' : '<C-k>'
 <
 You can optionally define mappings for cutting the currently selected text, to
@@ -106,57 +106,23 @@ are accepted:
     - snippets/{filetype}/{trigger}.snippet
     - snippets/{filetype}/{trigger}/{description}.snippet
 
+When scanning the |runtimepath| for snippets, directories coming from
+plugins/packages will have lower priority than other directories.
+Also project-local snippets will be loaded, if found in `.snippets/` in the
+current working directory.
+
+From lower to higher priority:
+
+1. snippets from packages or plugins
+2. snippets from other locations (eg. ~/.local/share/nvim/site/snippets)
+3. snippets in 'after' directories
+4. snippets in directories from |snippy-options|
+5. project-local snippets (`./.snippets/` directory)
+
 Files with the `.snippet` extension contain a single snippet each, whereas
-files with the `.snippets` extension can be used to declare multiple snippets
-using the following format:
->
-    snippet trigger1 "Description for snippet 1" [options]
-        This is the first line.
-        This is the second line.
-    snippet trigger2 "Description for snippet 2" [options]
-        This is the first line.
-        This is the second line.
-<
-The `option`s control the behavior of the expansion of the snippet and are
-optional. Currently supported are the following:
+files with the `.snippets` extension can be used to declare multiple snippets.
 
-    `w  ` Word boundary: the word expands only when the trigger is on a word
-        boundary. This is the default behavior and can be omitted.
-
-    `i  ` In-word expansion: the snippet expands even if the trigger is only
-        part of the word, up to the cursor.
-
-    `b  ` Beginning of line: the snippet is only expanded if its trigger is
-        the first word on the line, only preceeded by whitespace.
-
-    `^  ` Column 1: as above, but also without preceding whitespace.
-
-    `#  ` Beginning of file: the snippet can expand only at the first column
-        of the first line.
-
-    `_  ` Ensure empty lines: ensure a number of empty lines after the snippet
-        equal to the number of underscores in the snippet options.
-
-                                                      *snippy-usage-indenting*
-
-Make sure each line in the snippet definition is indented with spaces or tabs
-in order to be recognized as such. By default, indenting is done with tabs,
-but it is also possible to indent with spaces, as long as it is consistent and
-there is no mixing of tabs and spaces. If you want Neovim to indent your
-custom snippets with two spaces, for example, create a file
-`after/ftplugin/snippets.vim` and add the following: >
-
-    setlocal expandtab tabstop=2 sw=2
-<
-This could also be achieved with an |autocmd|. Identing with spaces is a
-Snippy feature and might not be compatible with other snippet plugins like
-SnipMate.
-
-Note: Snippy follows the |runtimepath| order when loading snippets, which
-means snippets defined in folders coming later in the list will always
-override those loaded before. So, if you put your custom snippets in
-`after/snippets/`, they should override any snippets provided by plugins in
-case of name conflict.
+See |snippy-snipmate-syntax|.
 
                                                          *snippy-usage-scopes*
 
@@ -208,6 +174,62 @@ with the LSP syntax. A basic SniMate-style snippet looks like this:
         System.out.println($1);
     }
 <
+`.snippets` files can declare multiple snippets the following format:
+>
+    snippet trigger1 "Description for snippet 1" [options]
+        This is the first line.
+        This is the second line.
+    snippet trigger2 "Description for snippet 2" [options]
+        This is the first line.
+        This is the second line.
+<                                                    *snippy-snipmate-options*
+
+The `description` is optional, and could be used by completion plugins.
+
+The `options` control the behavior of the expansion of the snippet and are
+optional. Currently supported are the following:
+
+    `w  ` Word boundary: the word expands only when the trigger is on a word
+        boundary. This is the default behavior and can be omitted.
+
+    `i  ` In-word expansion: the snippet expands even if the trigger is only
+        part of the word, up to the cursor.
+
+    `b  ` Beginning of line: the snippet is only expanded if its trigger is
+        the first word on the line, only preceeded by whitespace.
+
+    `^  ` Column 1: as above, but also without preceding whitespace.
+
+    `#  ` Beginning of file: the snippet can expand only at the first column
+        of the first line.
+
+    `_  ` Ensure empty lines: ensure a number of empty lines after the snippet
+        equal to the number of underscores in the snippet options.
+
+                                                   *snippy-snipmate-indenting*
+
+Default indentation in snippet definitions is with tabs, and it's recommended
+you leave it that way: when inserted in a buffer that uses spaces for
+indentation, it will be changed automatically at snippet insertion. So your
+snippets will use tabs if the file uses tabs, or spaces otherwise.
+
+                                                    *snippy-snipmate-tabstops*
+
+In addition to TextMate-style tabstops (`$1`, `${1}`, etc), simple tabstops
+can also be written with `___`. They are numberless and processed after
+numbered tabstops/placeholders, in the order they're found.
+The `vvv` tabstop can replace `$VISUAL` as well.
+
+For example: >
+    if ___ then
+        vvv
+    end
+<
+is equivalent to: >
+    if $1 then
+        $VISUAL
+    end
+<
                                                         *snippy-snipmate-eval*
 
 This syntax also allows Vim code to be evaluated inside backticks (``):
@@ -219,8 +241,7 @@ instead of |eval()|, and the result of the system command will be inserted:
 >
     Directory listing:
     `!ls`
-<
-                                                   *snippy-snipmate-transform*
+<                                                  *snippy-snipmate-transform*
 
 Transformations are supported for tabstops and variables, with the caveat that
 Vim regular expressions are to be used instead of Javascript ones. The
@@ -239,6 +260,7 @@ the `snippy.cut_text()` function or the `<plug>(snippy-cut-text)` mapping.
 This is equivalent to the `$TM_SELECTED_TEXT` variable defined by the
 TextMate/LSP syntax.
 
+A `$VISUAL` variable is replaced by a numberless placeholder, if it's empty.
 
 ==============================================================================
 FUNCTIONS                                                   *snippy-functions*
