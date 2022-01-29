@@ -141,7 +141,7 @@ end
 ---
 --@param text (string) Text to be appended.
 function Builder:append_text(text, ident_level)
-    local lines = vim.split(text, '\n', true)
+    local lines = type(text) == 'string' and vim.split(text, '\n', true) or text
     lines = self:indent_lines(lines, ident_level)
     self.row = self.row + #lines - 1
     if #lines > 1 then
