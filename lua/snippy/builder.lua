@@ -104,6 +104,7 @@ function Builder.new(o)
     local builder = setmetatable(o, { __index = Builder })
     builder.stops = {}
     builder.result = ''
+    builder.indent = o.indent or ''
     builder.level_indent = ''
     return builder
 end
@@ -115,9 +116,9 @@ end
 --- Indents a list of lines.
 ---
 --@param lines (list) A table containing lines.
---@param indent_lines (bool) Whether the lines should idented per level.
+--@param do_indent (bool) Whether the lines should be indented per level.
 --@returns (string) The lines, indented.
-function Builder:indent_lines(lines, ident_level)
+function Builder:indent_lines(lines, do_indent)
     local result = {}
     local new_level
     for i, line in ipairs(lines) do
@@ -125,8 +126,8 @@ function Builder:indent_lines(lines, ident_level)
             line = line:gsub('\t', string.rep(' ', vim.fn.shiftwidth()))
         end
         new_level = line:match('^%s*')
-        if i > 1 and self.indent and line ~= '' then
-            if ident_level then
+        if i > 1 then
+            if do_indent and line ~= '' then
                 line = self.level_indent .. line
             end
             line = self.indent .. line
@@ -140,9 +141,9 @@ end
 --- Appends a sequence of characters to the result.
 ---
 --@param text (string) Text to be appended.
-function Builder:append_text(text, ident_level)
+function Builder:append_text(text, do_indent)
     local lines = type(text) == 'string' and vim.split(text, '\n', true) or text
-    lines = self:indent_lines(lines, ident_level)
+    lines = self:indent_lines(lines, do_indent)
     self.row = self.row + #lines - 1
     if #lines > 1 then
         self.col = #lines[#lines] -- fn.strchars(lines[#lines])
@@ -212,7 +213,10 @@ function Builder:process_structure(structure, parent)
                         ok, result = pcall(fn.eval, code)
                     end
                     if ok then
-                        self:append_text(result)
+                        if type(result) == 'number' then
+                            result = tostring(result)
+                        end
+                        self:append_text(result, true)
                     else
                         util.print_error(
                             string.format('Invalid eval code `%s` at %d:%d: %s', code, self.row, self.col, result)
