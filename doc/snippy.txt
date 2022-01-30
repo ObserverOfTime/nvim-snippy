@@ -7,9 +7,12 @@ CONTENTS                                                     *snippy-contents*
 
     INTRODUCTION.........................|snippy-introduction|
     USAGE................................|snippy-usage|
-    FUNCTIONS............................|snippy-functions|
+    SNIPPET SYNTAX.......................|snippy-snippet-syntax|
     OPTIONS..............................|snippy-options|
+    BUFFER OPTIONS.......................|snippy-bufer-options|
     COMMANDS.............................|snippy-commands|
+    FUNCTIONS............................|snippy-functions|
+    ADVANCED SETUP.......................|snippy-advanced-setup|
     LICENSE..............................|snippy-license|
 
 
@@ -26,73 +29,30 @@ USAGE                                                           *snippy-usage*
 
 Snippy includes an optional |snippy.setup()| function for you to quickly
 configure it according to your needs. See the |snippy-options| section for
-information on the available options. Below is an example showing most of the
-available options:
->
-    require('snippy').setup({
-        snippet_dirs = '~/snippets',
-        hl_group = 'Search',
-        scopes = {
-            _ = { },
+information on the available options.
 
-            lua = function(scopes)
-                if vim.api.nvim_buf_get_name(0):find('_spec.lua$') then
-                    table.insert(scopes, 'busted')
-                end
-                return scopes
-            end,
-
-            php = { '_', 'php', 'html', 'javascript' },
-        },
-        mappings = {
-            is = {
-                ["<Tab>"] = "expand_or_advance",
-                ["<S-Tab>"] = "previous",
-            },
-            nx = {
-                ["<leader>x"] = "cut_text",
-            },
-        },
-    })
-<
-It's also possible to define options for a specific buffer using the
-|snippy.setup_buffer()| function. Example:
->
-    autocmd BufRead,BufNewFile *_spec.lua lua require('snippy').setup_buffer(0,
-        \ { scopes = { '_', 'lua', 'busted' } })
-<
                                                        *snippy-usage-mappings*
 
 Snippy comes with no mappings activated by default. So you'll want to define
-some, probably.
+some, probably. You can also map keys by using the `mappings` setup option
+(recommended, see |snippy-options|).
 
 For example, to use `<Tab>` to expand and jump forward, `<S-Tab>` to jump back:
 >
-    imap <expr> <Tab>   snippy#can_expand_or_advance() ? '<Plug>(snippy-expand-or-advance)' : '<Tab>'
-    imap <expr> <S-Tab> snippy#can_jump(-1) ? '<Plug>(snippy-previous)' : '<S-Tab>'
-    smap <expr> <Tab>   snippy#can_jump(1) ? '<Plug>(snippy-next)' : '<Tab>'
-    smap <expr> <S-Tab> snippy#can_jump(-1) ? '<Plug>(snippy-previous)' : '<S-Tab>'
-<
-Of course, you can also define different mappings to expand and jump forward.
-To expand with `<C-]>`, jump forward with `<C-j>`, and jump back with `<C-k>`,
-set it up like this:
->
-    imap <expr> <C-]> snippy#can_expand() ? '<Plug>(snippy-expand)'   : '<C-]>'
-    imap <expr> <C-j> snippy#can_jump(1)  ? '<Plug>(snippy-next)'     : '<C-j>'
-    imap <expr> <C-k> snippy#can_jump(-1) ? '<Plug>(snippy-previous)' : '<C-k>'
-    smap <expr> <C-j> snippy#can_jump(1)  ? '<Plug>(snippy-next)'     : '<C-j>'
-    smap <expr> <C-k> snippy#can_jump(-1) ? '<Plug>(snippy-previous)' : '<C-k>'
+    imap <expr> <Tab>   snippy#can_expand_or_advance() ? '<Plug>(snippy)'          : '<Tab>'
+    imap <expr> <S-Tab> snippy#can_jump(-1)            ? '<Plug>(snippy-previous)' : '<S-Tab>'
+    smap <expr> <Tab>   snippy#can_jump(1)             ? '<Plug>(snippy-next)'     : '<Tab>'
+    smap <expr> <S-Tab> snippy#can_jump(-1)            ? '<Plug>(snippy-previous)' : '<S-Tab>'
 <
 You can optionally define mappings for cutting the currently selected text, to
 be used later by the `$VISUAL` or `$TM_SELECTED_TEXT` variables:
 >
     nmap g<Tab> <Plug>(snippy-cut-text)
-    xmap <Tab> <Plug>(snippy-cut-text)
+    xmap <Tab>  <Plug>(snippy-cut-text)
 <
 When mapping from Lua using |nvim_set_keymap()|, you can use
 |snippy.can_expand()| and |snippy.can_jump()| functions. The Vimscript
-functions above are just convenience wrappings around those. You can also map
-keys by using the `mappings` setup option (see |snippy-options|).
+functions above are just convenience wrappings around those.
 
                                                        *snippy-usage-snippets*
 
@@ -230,7 +190,11 @@ is equivalent to: >
         $VISUAL
     end
 <
-                                                        *snippy-snipmate-eval*
+It's also possible to have named placeholders, with a default value: >
+    if {condition:test} then
+        print({condition})
+    end
+<                                                        *snippy-snipmate-eval*
 
 This syntax also allows Vim code to be evaluated inside backticks (``):
 >
@@ -262,88 +226,33 @@ TextMate/LSP syntax.
 
 A `$VISUAL` variable is replaced by a numberless placeholder, if it's empty.
 
-==============================================================================
-FUNCTIONS                                                   *snippy-functions*
-
-snippy.setup({options})                                       *snippy.setup()*
-    Set initial configuration for the plugin. See also |snippy-options|.
-
-snippy.setup_buffer({bufnr}, {options})                *snippy.setup_buffer()*
-    Set configuration for the current buffer. See also
-    |snippy-buffer-options|.
-
-snippy.can_expand()                                      *snippy.can_expand()*
-    Checks if a snippet can be expanded at the current location.
-
-snippy.can_jump({direction})                               *snippy.can_jump()*
-    Checks if a jump in the indicated direction can be performed at the
-    current location.
-
-    {direction} is a integer. You can pass `-1` or  `1` to mean backward or
-    forward respectively.
-
-snippy.can_expand_or_advance()                *snippy.can_expand_or_advance()*
-    Checks if a snippet can be expanded or a forward jump can be performed at
-    the current location.
-
-snippy.expand()                                              *snippy.expand()*
-    Expands the current trigger at the current location.
-
-snippy.expand_or_next()                              *snippy.expand_or_next()*
-    Expands the current trigger if possible. Otherwise jumps to the next
-    available tab stop.
-
-snippy.next()                                                  *snippy.next()*
-    Jumps to the next available tab stop.
-
-snippy.previous()                                          *snippy.previous()*
-    Jumps to the previous available tab stop.
-
-snippy.expand_snippet({snippet}[, {trigger}])        *snippy.expand_snippet()*
-    Expands {snippet} with {trigger} at the current cursor position.
-
-    {trigger} is optional.
-
-snippy.cut_text({mode}, {visual})                          *snippy.cut_text()*
-    Cuts and stores the currently selected text, to be used later.
-
-    {mode} is a string returned by |mode()|.
-
-    {visual} indicates whether the function was called from visual mode.
-
-snippy.is_active()                                        *snippy.is_active()*
-    Checks whether there is an active snippet.
-
-snippy.get_completion_items()                  *snippy.get_completion_items()*
-    Returns a list of all completion items available in the current scope.
-
-snippy.complete()                                          *snippy.complete()*
-    Shows a basic completion menu at the current location.
-
-snippy.complete_done()                                *snippy.complete_done()*
-    To be called when the |CompleteDone| |autocmd| is fired, expanding any snippet
-    present in the |v:completed_item| variable. Example:
->
-    autocmd CompleteDone * lua require 'snippy'.complete_done()
-<
-Some Vimscript |autoload| functions are also provided for convenience,
-specially for mappings:
-
-snippy#can_expand()                                      *snippy#can_expand()*
-    See |snippy.can_expand()|.
-
-snippy#can_jump({direction})                               *snippy#can_jump()*
-    See |snippy.can_jump()|.
-
-snippy#can_expand_or_advance()                *snippy#can_expand_or_advance()*
-    See |snippy.can_expand_or_advance()|.
 
 
 ==============================================================================
 OPTIONS                                                       *snippy-options*
 
 This plugin can be configured by passing a dictionary to the lua function
-`snippy.setup(...)`. The following options are supported:
+`snippy.setup(...)`.
+
+Example setup:
+>
+    local snippy = require('snippy')
+
+    snippy.setup({
+        snippet_dirs = '~/snippets',
+        hl_group = 'Search',
+        mappings = {
+            is = {
+                ["<Tab>"] = "expand_or_advance",
+                ["<S-Tab>"] = "previous",
+            },
+            nx = {
+                ["<leader>x"] = "cut_text",
+            },
+        },
+    })
+<
+The following options are supported:
 
 snippet_dirs ~
     A comma-separated (if a `String`) list of directories containing snippets.
@@ -361,6 +270,37 @@ choice_delay~
     Defines the delay in milliseconds before the choice menu is displayed.
         Type: `Number`
         Default: 100
+
+mappings~
+    A table for easily mapping keys in Lua. Each key must be a table or a
+    string with one or more mode identifier characters (see |map-listing|).
+    The values should be tables mapping LHS |key-notation|s to RHS values.
+    RHS can be a string, or even a function (see |snippy-advanced-setup|).
+        Type: `Table`
+        Default: {}
+        Example: >
+
+        mappings = {
+            -- Mappings for insert and select mode
+            is = {
+                ["<Tab>"] = "expand_or_advance",
+                ...
+            }
+            -- Mappings for visual mode
+            x = {
+                ["<Tab>"] = "cut_text",
+                ...
+            }
+        }
+<
+    Valid string RHS values:
+
+        "expand_or_advance"~
+        "expand"~
+        "next"~
+        "previous"~
+        "cut_text"~
+
 
 scopes ~
     A table with filetypes as keys. Each value must be a table containing a
@@ -383,49 +323,16 @@ scopes ~
             php = { '_', 'php', 'html', 'javascript' },
         }
 <
-mappings~
-    A table for easily mapping keys in Lua. Each key must be a table or a
-    string with one or more mode identifier characters (see |map-listing|).
-    The values should be tables mapping LHS mapping values to RHS values.
-    RHS should be a string or a `snippy.mapping.*` enum value.
-        Type: `Table`
-        Default: {}
-        Example: >
-
-        mappings = {
-            -- Mappings for insert and select mode
-            [{ 'i', 's' }] = {
-                ["<Tab>"] = "expand_or_advance",
-                ...
-            }
-            -- Same, with string as identifier for modes
-            is = {
-                ["<Tab>"] = "expand_or_advance",
-                ...
-            }
-            -- With enum value as RHS:
-            x = {
-                ["<Tab>"] = snippy.mapping.CutText,
-                ...
-            }
-        }
-<
-    Valid string LHS values and corresponding enum values are the following:
-
-    | String              | Enum                             | ~
-    +---------------------+----------------------------------+ ~
-    | expand_or_advance   | snippy.mapping.ExpandOrAdvance   |
-    | expand              | snippy.mapping.Expand            |
-    | next                | snippy.mapping.Next              |
-    | previous            | snippy.mapping.Previous          |
-    | cut_text            | snippy.mapping.CutText           |
-
-
 ==============================================================================
 BUFFER OPTIONS                                         *snippy-buffer-options*
 
-It is also possible to set configuration specific to a buffer by calling
-`snippy.setup_buffer(...)` function. The following options are supported:
+It's also possible to define options for a specific buffer using the
+|snippy.setup_buffer()| function. Example:
+>
+    autocmd BufRead,BufNewFile *_spec.lua lua require('snippy').setup_buffer(0,
+        \ { scopes = { '_', 'lua', 'busted' } })
+<
+The following options are supported:
 
 scopes ~
     Can be set to a table containing a list of scopes or a function that
@@ -438,14 +345,193 @@ scopes ~
 ==============================================================================
 COMMANDS                                                     *snippy-commands*
 
-:SnippyEdit {file}                                                |SnippyEdit|
+:Snippets[!] {file}                                                 *:Snippets*
 
     Opens an existing snippet file in a new split. Completion available.
 
-:SnippyReload                                                  |SnippyReload|
+    Without arguments, will open the most obvious location, eg. for lua: >
+        ~/.local/share/nvim/site/snippets/lua.snippets
+<
+    With <bang> and no arguments, it will open a project-local snippets file,
+    eg: >
+        ./.snippets/lua.snippets
+<
+:SnippetsReload                                               *:SnippetsReload*
 
     Invalidates current cache, allowing newly added/edited snippets to be
-    loaded.
+    loaded. Normally not necessary, because cache is invalidated automatically
+    on write when a `snippets` file is updated.
+
+
+==============================================================================
+FUNCTIONS                                                   *snippy-functions*
+
+
+`snippy.setup`({options})                                       *snippy.setup()*
+
+    Set initial configuration for the plugin. See also |snippy-options|.
+
+
+`snippy.setup_buffer`({bufnr}, {options})                *snippy.setup_buffer()*
+
+    Set configuration for the current buffer. See also
+    |snippy-buffer-options|.
+
+
+`snippy.can_expand`()                                      *snippy.can_expand()*
+
+    Checks if a snippet can be expanded at the current location.
+
+
+`snippy.can_jump`({direction})                               *snippy.can_jump()*
+
+    Checks if a jump in the indicated direction can be performed at the
+    current location.
+
+    {direction} is a integer. You can pass `-1` or  `1` to mean backward or
+    forward respectively.
+
+
+`snippy.can_expand_or_advance`()                *snippy.can_expand_or_advance()*
+
+    Checks if a snippet can be expanded or a forward jump can be performed at
+    the current location.
+
+
+`snippy.expand`()                                              *snippy.expand()*
+
+    Expands the current trigger at the current location.
+
+
+`snippy.expand_or_next`()                              *snippy.expand_or_next()*
+
+    Expands the current trigger if possible. Otherwise jumps to the next
+    available tab stop.
+
+
+`snippy.next`()                                                  *snippy.next()*
+
+    Jumps to the next available tab stop.
+
+
+`snippy.previous`()                                          *snippy.previous()*
+
+    Jumps to the previous available tab stop.
+
+
+`snippy.expand_snippet`({snippet}[, {trigger}])        *snippy.expand_snippet()*
+
+    Expands {snippet} with {trigger} at the current cursor position.
+
+    {trigger} is optional.
+
+
+`snippy.cut_text`({mode}, {visual})                          *snippy.cut_text()*
+
+    Cuts and stores the currently selected text, to be used later.
+
+    {mode} is a string returned by |mode()|.
+
+    {visual} indicates whether the function was called from visual mode.
+
+
+`snippy.is_active`()                                        *snippy.is_active()*
+
+    Checks whether there is an active snippet.
+
+
+`snippy.get_completion_items`()                  *snippy.get_completion_items()*
+
+    Returns a list of all completion items available in the current scope.
+
+
+`snippy.complete`()                                          *snippy.complete()*
+
+    Shows a basic completion menu at the current location.
+
+
+`snippy.complete_done`()                                *snippy.complete_done()*
+
+    To be called when the |CompleteDone| |autocmd| is fired, expanding any snippet
+    present in the |v:completed_item| variable. Example:
+>
+    autocmd CompleteDone * lua require 'snippy'.complete_done()
+<
+
+-------------------------------------------------------------------------------
+
+Some Vimscript |autoload| functions are also provided for convenience,
+specially for mappings:
+
+
+`snippy#can_expand`()                                      *snippy#can_expand()*
+
+    See |snippy.can_expand()|.
+
+
+`snippy#can_jump`({direction})                               *snippy#can_jump()*
+
+    See |snippy.can_jump()|.
+
+
+`snippy#can_expand_or_advance`()                *snippy#can_expand_or_advance()*
+
+    See |snippy.can_expand_or_advance()|.
+
+
+
+==============================================================================
+ADVANCED SETUP                                         *snippy-advanced-setup*
+
+This is an example of setup that uses functions. Some additional steps could
+be required if you use a completion plugin.
+>
+    vim.cmd('packadd nvim-snippy')
+
+    local ok, snippy = pcall(require, 'snippy')
+    if not ok then return end
+
+    local fwd = (vim.api.nvim_replace_termcodes('<C-n>', true, true, true))
+    local bwd = (vim.api.nvim_replace_termcodes('<C-p>', true, true, true))
+    local tab = (vim.api.nvim_replace_termcodes('<Tab>', true, true, true))
+
+    local feedkeys = vim.api.nvim_feedkeys
+
+    snippy.setup {
+        hl_group = 'WarningMsg',
+        mappings = {
+            i = {
+                ["<Tab>"] = function()
+                    if snippy.can_expand() then
+                        snippy.expand()
+                    elseif snippy.can_jump(1) then
+                        snippy.next()
+                    elseif vim.fn.pumvisible() == 1 then
+                        feedkeys(fwd, '', true)
+                    else
+                        feedkeys(tab, '', true)
+                    end
+                end,
+                ["<S-Tab>"] = function()
+                    if snippy.can_jump(-1) then
+                        snippy.previous()
+                    elseif vim.fn.pumvisible() == 1 then
+                        feedkeys(bwd, '', true)
+                    else
+                        feedkeys(tab, '', true)
+                    end
+                end,
+            },
+            s = {
+                ["<Tab>"] = "expand_or_advance",
+                ["<S-Tab>"] = "previous",
+            },
+            nx = {
+                ["<leader>x"] = "cut_text",
+            },
+        },
+    }
+<
 
 
 ==============================================================================
@@ -455,4 +541,4 @@ Snippy is licensed under the MIT license.
 
 
 ==============================================================================
-vim:tw=78:et:ts=4:ft=help:norl:
+vim:tw=78:et:ts=4:sw=4:ft=help:norl:

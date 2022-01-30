@@ -4,15 +4,13 @@ endif
 let g:loaded_snippy = 1
 
 " Navigational mappings
-inoremap <silent> <plug>(snippy-expand-or-advance) <cmd>lua require 'snippy'.expand_or_advance()<cr>
-imap <silent> <plug>(snippy-expand-or-next) <plug>(snippy-expand-or-advance)
-inoremap <silent> <plug>(snippy-expand) <cmd>lua require 'snippy'.expand()<cr>
-inoremap <silent> <plug>(snippy-next) <cmd>lua require 'snippy'.next()<cr>
+inoremap <silent> <plug>(snippy)          <cmd>lua require 'snippy'.expand_or_advance()<cr>
+inoremap <silent> <plug>(snippy-expand)   <cmd>lua require 'snippy'.expand()<cr>
+inoremap <silent> <plug>(snippy-next)     <cmd>lua require 'snippy'.next()<cr>
 inoremap <silent> <plug>(snippy-previous) <cmd>lua require 'snippy'.previous()<cr>
 
-snoremap <silent> <plug>(snippy-expand-or-advance) <cmd>lua require 'snippy'.expand_or_advance()<cr>
-smap <silent> <plug>(snippy-expand-or-next) <plug>(snippy-expand-or-advance)
-snoremap <silent> <plug>(snippy-next) <cmd>lua require 'snippy'.next()<cr>
+snoremap <silent> <plug>(snippy)          <cmd>lua require 'snippy'.expand_or_advance()<cr>
+snoremap <silent> <plug>(snippy-next)     <cmd>lua require 'snippy'.next()<cr>
 snoremap <silent> <plug>(snippy-previous) <cmd>lua require 'snippy'.previous()<cr>
 
 " Selecting/cutting text
@@ -20,10 +18,7 @@ nnoremap <silent> <plug>(snippy-cut-text) <cmd>set operatorfunc=snippy#cut_text<
 xnoremap <silent> <plug>(snippy-cut-text) <cmd>call snippy#cut_text(mode(), v:true)<cr>
 
 " Commands
-command! -nargs=1 -complete=customlist,s:complete_snippet_files
-            \ SnippyEdit execute "split" fnameescape(<q-args>)
-command! SnippyReload lua require 'snippy'.clear_cache()
+command! -bang -nargs=? -complete=customlist,snippy#complete
+            \ Snippets   call snippy#open(<q-args>, <bang>0)
 
-function! s:complete_snippet_files(lead, line, curpos) abort
-    return luaeval('require("snippy").complete_snippet_files(_A)', a:lead)
-endfunction
+command! SnippetsReload lua require 'snippy'.clear_cache()

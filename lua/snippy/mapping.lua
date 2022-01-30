@@ -48,7 +48,11 @@ end
 M.cut_text = '<Plug>(snippy-cut-text)'
 
 local function create_rhs(rhs, lhs)
-    if type(M[rhs]) == 'function' then
+    if type(rhs) == 'function' then
+        local l = lhs:gsub('%W', '')
+        M['_' .. l] = rhs
+        return '<cmd>lua require("snippy.mapping")["_' .. l .. '"]()<cr>', { noremap = true }
+    elseif type(M[rhs]) == 'function' then
         local idx = #fallback + 1
         fallback[idx] = lhs
         return '<cmd>lua require("snippy.mapping").' .. rhs .. '(' .. idx .. ')<cr>', { noremap = true }
