@@ -112,8 +112,15 @@ local function create_missing_ids(stops)
         end
     end
     -- create ids for yet id-less stops
-    for _, stop in ipairs(stops) do
+    local ns = #stops
+    local last_is_zero = stops[ns].id == 0
+    for i, stop in ipairs(stops) do
         if not stop.id then
+            if last_is_zero and i == ns - 1 then
+                stop.id = 0
+                table.remove(stops)
+                break
+            end
             max_id = max_id + 1
             if stop.name then
                 for _, st in ipairs(stops) do
