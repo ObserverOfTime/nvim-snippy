@@ -208,9 +208,9 @@ local function get_snippet_at_cursor()
 
     local current_line_to_col = api.nvim_get_current_line():sub(1, col)
     local word = current_line_to_col:match('(%S*)$')
+    local word_bound = current_line_to_col:match('([^%p%s%c]*)$')
     local bol = word == current_line_to_col
     local bof = lnum == 1 and word == current_line_to_col
-    local word_bound = true
     local scopes = shared.get_scopes()
 
     while #word > 0 do
@@ -236,7 +236,7 @@ local function get_snippet_at_cursor()
                         if word == current_line_to_col:gsub('^%s*', '') then
                             return word, snippet
                         end
-                    elseif word_bound then
+                    elseif word_bound == word then
                         -- By default only match on word boundary
                         return word, snippet
                     end
@@ -244,7 +244,6 @@ local function get_snippet_at_cursor()
             end
         end
         word = word:sub(2)
-        word_bound = false
     end
     return nil, nil
 end
