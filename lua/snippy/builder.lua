@@ -207,8 +207,12 @@ function Builder:process_structure(structure, parent)
                     })
                 elseif value.type == 'eval' then
                     local code, ok, result = value.children[1].raw, false, ''
-                    if code:sub(1,1) == '!' then
-                        ok, result = pcall(fn.systemlist, code:sub(2))
+                    local func = ({
+                            ['!'] = fn.systemlist,
+                            ['='] = fn.luaeval,
+                        })[code:sub(1,1)]
+                    if func then
+                        ok, result = pcall(func, code:sub(2))
                     else
                         ok, result = pcall(fn.eval, code)
                     end
@@ -223,7 +227,7 @@ function Builder:process_structure(structure, parent)
                     else
                         util.print_error(
                             string.format('Invalid eval code `%s` at %d:%d: %s', code, self.row, self.col, result)
-                        )
+                            )
                     end
                 elseif value.type == 'text' then
                     local text = value.escaped

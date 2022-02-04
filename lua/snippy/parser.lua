@@ -25,7 +25,6 @@ local colon = token(':')
 local slash = token('/')
 local comma = token(',')
 local bar = token('|')
-local backtick = token('`')
 
 local varname = pattern('^[_a-zA-Z][_a-zA-Z0-9]*')
 
@@ -110,13 +109,13 @@ end
 --  SnipMate parser
 
 local function create_snipmate_parser()
-    local eval, visual, placeholder, variable
+    local visual, placeholder, variable
 
     local any = lazy(function()
-        return one(tabstop, placeholder, variable, visual, choice, eval, sigil)
+        return one(tabstop, placeholder, variable, visual, choice, sigil)
     end)
 
-    local inner = opt(many(one(any, text('[$}`]', ''))))
+    local inner = opt(many(one(any, text('[$}]', ''))))
 
     placeholder = map(seq(sigil, open, int, colon, inner, close), function(value)
         local children = #value == 6 and value[5] or {}
@@ -154,11 +153,7 @@ local function create_snipmate_parser()
         end)
     )
 
-    eval = map(seq(backtick, text('`', ''), backtick), function(value)
-        return { type = 'eval', children = { value[2] } }
-    end)
-
-    return many(one(any, text('[%$`]', '}')))
+    return many(one(any, text('[%$]', '}')))
 end
 
 M.parse = create_parser()

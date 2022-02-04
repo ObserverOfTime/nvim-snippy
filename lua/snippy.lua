@@ -491,6 +491,7 @@ function M.parse_snippet(snippet)
           text = add_empty_lines(text, snippet.option.empty_lines)
         end
         if snippet.kind == 'snipmate' then
+            text = require'snippy.parser.eval'.resolve_interpolations(text)
             if shared.config.generic_tabstops then
                 text = text:gsub('vvv', '$VISUAL')
                 text = text:gsub('___', '${_}')

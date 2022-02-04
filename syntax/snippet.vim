@@ -5,7 +5,7 @@ syn region snipPh matchgroup=Special start='\${\w\+:' end='}' contains=snipPhSel
 syn match snipStop '\$\d\+\|___\|vvv'
 syn match snipEscape '\\\\\|\\`'
 syn match snipPhSel '.\{-}\ze}' contained
-syn match snipEval '`.\{-}`'
+syn region snipEval start='`' end='\\\\`\|[^\\]`'
 syn match snipVariable '$\v(VISUAL|TM_\w+)'
 
 syn region snipChoice start='\${\d\+|' end='|}' contains=snipChoiceVal

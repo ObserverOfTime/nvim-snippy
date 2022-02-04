@@ -209,11 +209,29 @@ This syntax also allows Vim code to be evaluated inside backticks (``):
 >
     Current date is `strftime('%c')`
 <
+Since interpolation blocks are evaluated before everything else, you can nest
+placeholders inside of them, or nest them inside placeholders:
+>
+    ${1|`strftime('%d %b %Y')`,today|}
+
 If the first character inside the backticks is a `!`, |system()| is used
 instead of |eval()|, and the result of the system command will be inserted:
 >
     Directory listing:
     `!ls`
+<
+If the first character inside the backticks is a `=`, the block is evaluated as
+|lua| code.
+
+Backtick blocks can span multiple lines (not if nested in placeholders!):
+>
+	This inserts '2':
+	`=
+	(function(x)
+		x = x + 1
+		return x
+	end)(1)
+	`
 <                                                  *snippy-snipmate-transform*
 
 Transformations are supported for tabstops and variables, with the caveat that
