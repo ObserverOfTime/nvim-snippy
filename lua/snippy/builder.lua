@@ -213,8 +213,11 @@ function Builder:process_structure(structure, parent)
                         ok, result = pcall(fn.eval, code)
                     end
                     if ok then
-                        if type(result) == 'number' then
+                        local tp = type(result)
+                        if tp == 'number' then
                             result = tostring(result)
+                        elseif tp ~= 'table' and tp ~= 'string' then
+                            result = ''
                         end
                         self:append_text(result, true)
                     else
