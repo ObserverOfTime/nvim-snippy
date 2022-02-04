@@ -176,8 +176,22 @@ snippets will use tabs if the file uses tabs, or spaces otherwise.
                                                     *snippy-snipmate-tabstops*
 
 In addition to TextMate-style tabstops (`$1`, `${1}`, etc), simple tabstops
-can also be written with `___`. They are numberless and processed after
-numbered tabstops/placeholders, in the order they're found.
+can also be written with `${_}`, or `$_`. They are numberless and processed
+after numbered tabstops/placeholders, in the order they're found.
+
+Placeholders can have a `name` instead of a `number`:
+    `${name:string}`    'string' is the placeholder default value
+    `$name`             will mirror the previously defined `${name:...}`
+
+Similarly, you can have numberless placeholders: `${_:string}`.
+Differently from named placeholders, they won't mirror each other, but will be
+processed independently, in the order they're found.
+
+                                                     *snippy-snipmate-generic*
+
+If the |snippy-option| `generic_tabstops` is enabled (it is by default), you
+can also write numberless tabstops with `___`, for better readability.
+
 The `vvv` tabstop can replace `$VISUAL` as well.
 
 For example: >
@@ -188,11 +202,6 @@ For example: >
 is equivalent to: >
     if $1 then
         $VISUAL
-    end
-<
-It's also possible to have named placeholders, with a default value: >
-    if {condition:test} then
-        print({condition})
     end
 <                                                        *snippy-snipmate-eval*
 
@@ -241,6 +250,7 @@ Example setup:
     snippy.setup({
         snippet_dirs = '~/snippets',
         hl_group = 'Search',
+        generic_tabstops = true,
         mappings = {
             is = {
                 ["<Tab>"] = "expand_or_advance",
@@ -255,30 +265,42 @@ Example setup:
 The following options are supported:
 
 snippet_dirs ~
-    A comma-separated (if a `String`) list of directories containing snippets.
-    Snippets must be placed in the top-level directory, with no nested
-    `snippets/` subfolder.
         Type: `String` or `List`
         Default: vim.api.nvim_list_runtime_paths()
 
+    A comma-separated (if a `String`) list of directories containing snippets.
+    Snippets must be placed in the top-level directory, with no nested
+    `snippets/` subfolder.
+
 hl_group ~
-    Highlight group used for placeholders.
         Type: `String`
         Default: nil
 
+    Highlight group used for placeholders.
+
+generic_tabstops ~
+        Type: `Boolean`
+        Default: true
+
+    Allow use of generic tabstops in forms:
+    `___`   numberless tabstop (same as `${_}`)
+    `vvv`   cut text placeholder (same as `$VISUAL`)
+
 choice_delay~
-    Defines the delay in milliseconds before the choice menu is displayed.
         Type: `Number`
         Default: 100
 
+    Defines the delay in milliseconds before the choice menu is displayed.
+
 mappings~
+        Type: `Table`
+        Default: {}
+
     A table for easily mapping keys in Lua. Each key must be a table or a
     string with one or more mode identifier characters (see |map-listing|).
     The values should be tables mapping LHS |key-notation|s to RHS values.
     RHS can be a string, or even a function (see |snippy-advanced-setup|).
-        Type: `Table`
-        Default: {}
-        Example: >
+    Example: >
 
         mappings = {
             -- Mappings for insert and select mode
@@ -303,13 +325,14 @@ mappings~
 
 
 scopes ~
+        Type: `Table`
+        Default: nil
+
     A table with filetypes as keys. Each value must be a table containing a
     list of scopes or a function that receives the calculated list of scopes
     for the current buffer and should return a new (possibly modified) list of
     scopes.
-        Type: `Table`
-        Default: nil
-        Example: >
+    Example: >
 
         scopes = {
             -- Load busted.snippets for *_spec.lua
@@ -335,11 +358,12 @@ It's also possible to define options for a specific buffer using the
 The following options are supported:
 
 scopes ~
+        Type: ||Table|
+        Default: nil
+
     Can be set to a table containing a list of scopes or a function that
     receives the calculated list of scopes for the current buffer and should
     return a new (possibly modified) list of scopes.
-        Type: ||Table|
-        Default: nil
 
 
 ==============================================================================
