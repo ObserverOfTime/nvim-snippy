@@ -122,13 +122,14 @@ local function create_missing_ids(stops)
                 break
             end
             max_id = max_id + 1
-            if stop.name then
+            if stop.name and stop.name ~= '_' then
                 for _, st in ipairs(stops) do
                     if st.name == stop.name then
                         st.id = max_id
                     end
                 end
             else
+                if stop.name == '_' then stop.name = nil end
                 stop.id = max_id
             end
         end
@@ -144,12 +145,12 @@ local function sort_stops(stops)
     table.sort(stops, function(s1, s2)
         if s1.id == 0 then
             return false
+        elseif s2.id == 0 then
+            return true
         elseif s1.name and s1.name == s2.name then
             return ( next(s1.children) and not next(s2.children) )
         elseif s2.name and s1.name == s2.name then
             return ( next(s2.children) and not next(s1.children) )
-        elseif s2.id == 0 then
-            return true
         elseif s1.id < s2.id then
             return true
         elseif s1.id > s2.id then
@@ -490,8 +491,9 @@ function M.parse_snippet(snippet)
           text = add_empty_lines(text, snippet.option.empty_lines)
         end
         if snippet.kind == 'snipmate' then
-            if shared.config.vvv_visual then
+            if shared.config.generic_tabstops then
                 text = text:gsub('vvv', '$VISUAL')
+                text = text:gsub('___', '${_}')
             end
             ok, parsed, pos = parser.parse_snipmate(text, 1)
         else

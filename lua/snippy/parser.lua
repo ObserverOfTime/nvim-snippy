@@ -52,10 +52,6 @@ local transform = map(seq(slash, text('/', ''), slash, text('[%/}]', ''), opt(fl
     }
 end)
 
-local generic = map(seq(token('___')), function(_)
-    return { type = 'tabstop', children = {} }
-end)
-
 local tabstop = one(
     map(seq(sigil, int), function(value)
         return { type = 'tabstop', id = value[2], children = {} }
@@ -117,7 +113,7 @@ local function create_snipmate_parser()
     local eval, visual, placeholder, variable
 
     local any = lazy(function()
-        return one(generic, tabstop, placeholder, variable, visual, choice, eval, sigil)
+        return one(tabstop, placeholder, variable, visual, choice, eval, sigil)
     end)
 
     local inner = opt(many(one(any, text('[$}`]', ''))))
@@ -162,7 +158,7 @@ local function create_snipmate_parser()
         return { type = 'eval', children = { value[2] } }
     end)
 
-    return many(one(any, text('[_%$`]', '}')))
+    return many(one(any, text('[%$`]', '}')))
 end
 
 M.parse = create_parser()
