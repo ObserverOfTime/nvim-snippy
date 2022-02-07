@@ -207,11 +207,11 @@ local function get_snippet_at_cursor()
     M.read_snippets()
     local lnum, col = unpack(api.nvim_win_get_cursor(0))
 
-    local current_line_to_col = api.nvim_get_current_line():sub(1, col)
-    local word = current_line_to_col:match('(%S*)$')
-    local word_bound = current_line_to_col:match('([^%p%s%c]*)$')
-    local bol = word == current_line_to_col
-    local bof = lnum == 1 and word == current_line_to_col
+    local line_to_col = api.nvim_get_current_line():sub(1, col)
+    local word = line_to_col:match('(%S*)$')
+    local word_bound = line_to_col:match('([_%w]+)$') or line_to_col:match('([^%p%s%c]*)$')
+    local bol = word == line_to_col
+    local bof = lnum == 1 and word == line_to_col
     local scopes = shared.get_scopes()
 
     while #word > 0 do
@@ -234,7 +234,7 @@ local function get_snippet_at_cursor()
                         end
                     elseif snippet.option.beginning then
                         -- Match if word is first on line (trimmed)
-                        if word == current_line_to_col:gsub('^%s*', '') then
+                        if word == line_to_col:gsub('^%s*', '') then
                             return word, snippet
                         end
                     elseif word_bound == word then
