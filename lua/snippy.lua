@@ -79,118 +79,6 @@ local function present_choices(stop, startpos)
     end, shared.config.choice_delay)
 end
 
-local function mirror_stop(number)
-    local stops = buf.stops
-    if number < 1 or number > #stops then
-        return
-    end
-    local value = stops[number]
-    local text = value:get_text()
-    for i, stop in ipairs(stops) do
-        if i > number and stop.id == value.id then
-            stop:set_text(text)
-        end
-    end
-    if value.spec.type == 'placeholder' then
-        if text ~= value.placeholder then
-            buf.clear_children(number)
-        end
-    end
-end
-
---- Create ids for id-less tabstops and named placeholders.
---- @param stops table
-local function create_missing_ids(stops)
-    local max_id = 0
-    -- find the maximum numbered tabstop/placeholder
-    -- numberless tabstops/placeholders will come after those
-    for _, stop in ipairs(stops) do
-        if stop.id then
-            if max_id < stop.id then
-                max_id = stop.id
-            end
-        end
-    end
-    -- create ids for yet id-less stops
-    local ns = #stops
-    local last_is_zero = stops[ns].id == 0
-    for i, stop in ipairs(stops) do
-        if not stop.id then
-            if last_is_zero and i == ns - 1 then
-                stop.id = 0
-                table.remove(stops)
-                break
-            end
-            max_id = max_id + 1
-            if stop.name and stop.name ~= '_' then
-                for _, st in ipairs(stops) do
-                    if st.name == stop.name then
-                        st.id = max_id
-                    end
-                end
-            else
-                if stop.name == '_' then stop.name = nil end
-                stop.id = max_id
-            end
-        end
-    end
-end
-
---- Sort the tabstops. If id == 0, it comes last, if ids are different, lower
---- id comes first. If it's the same named placeholder, the one with a default
---- value comes first.
---- @param stops table: the unsorted tabstops
---- @return table: sorted tabstops
-local function sort_stops(stops)
-    table.sort(stops, function(s1, s2)
-        if s1.id == 0 then
-            return false
-        elseif s2.id == 0 then
-            return true
-        elseif s1.name and s1.name == s2.name then
-            return ( next(s1.children) and not next(s2.children) )
-        elseif s2.name and s1.name == s2.name then
-            return ( next(s2.children) and not next(s1.children) )
-        elseif s1.id < s2.id then
-            return true
-        elseif s1.id > s2.id then
-            return false
-        end
-        return util.is_before(s1.startpos, s2.startpos)
-    end)
-end
-
-local function make_unique_ids(stops)
-    local max_id = M.max_id or 0
-    local id_map = {}
-    for _, stop in ipairs(stops) do
-        if id_map[stop.id] then
-            stop.id = id_map[stop.id]
-        else
-            max_id = max_id + 1
-            id_map[stop.id] = max_id
-            stop.id = max_id
-        end
-    end
-    for _, stop in ipairs(stops) do
-        if stop.parent then
-            stop.parent = id_map[stop.parent]
-        end
-    end
-    M.max_id = max_id
-end
-
-local function place_stops(stops)
-    create_missing_ids(stops)
-    sort_stops(stops)
-    make_unique_ids(stops)
-    local pos = buf.current_stop + 1
-    for _, spec in ipairs(stops) do
-        buf.add_stop(spec, pos)
-        pos = pos + 1
-    end
-end
-
 local function add_empty_lines(text, n)
     local ln = api.nvim_win_get_cursor(0)[1]
     while n > 0 and fn.getline(ln + 1) ~= '' do
@@ -258,35 +146,6 @@ local function get_lsp_item(user_data)
             return type(lspitem) == 'string' and vim.fn.json_decode(lspitem) or lspitem
         end
     end
-end
-
--- Autocmd handlers
-
-local function did_undo()
-    local ut = fn.undotree()
-    return ut.seq_last ~= ut.seq_cur
-end
-
-function M._handle_TextChanged()
-    if did_undo() then
-        buf.clear_state()
-        return
-    end
-    buf.fix_current_stop()
-    buf.update_state()
-    M._mirror_stops()
-end
-
-function M._handle_TextChangedP()
-    buf.fix_current_stop()
-end
-
-function M._handle_CursorMoved()
-    M._check_position()
-end
-
-function M._handle_BufWritePost()
-    M._check_position()
 end
 
 -- Public functions
@@ -377,12 +236,6 @@ function M.cut_text(mode, visual)
     api.nvim_feedkeys(t(keys .. '"_c'), 'n', true)
 end
 
-function M._mirror_stops()
-    if buf.current_stop ~= 0 then
-        mirror_stop(buf.current_stop)
-    end
-end
-
 function M.previous()
     local stops = buf.stops
     local stop = (buf.current_stop or 0) - 1
@@ -407,7 +260,7 @@ function M._jump(stop)
         return false
     end
     if buf.current_stop ~= 0 then
-        mirror_stop(buf.current_stop)
+        buf.mirror_stop(buf.current_stop)
         buf.deactivate_stop(buf.current_stop)
     end
     local should_finish = false
@@ -431,7 +284,7 @@ function M._jump(stop)
         end
 
         buf.activate_stop(stop)
-        mirror_stop(stop)
+        buf.mirror_stop(stop)
     else
         should_finish = true
     end
@@ -445,39 +298,6 @@ function M._jump(stop)
     end
 
     return true
-end
-
--- Check if the cursor is inside any stop
-function M._check_position()
-    local stops = buf.stops
-    local row, col = unpack(api.nvim_win_get_cursor(0))
-    row = row - 1
-    local max_row = vim.api.nvim_buf_line_count(0) - 1
-    for _, stop in ipairs(stops) do
-        local from, to = stop:get_range()
-        local startrow, startcol = unpack(from)
-        local endrow, endcol = unpack(to)
-        if fn.mode() == 'n' then
-            if startcol + 1 == fn.col('$') then
-                startcol = startcol - 1
-            end
-            if endcol + 1 == fn.col('$') then
-                endcol = endcol - 1
-            end
-        end
-
-        if startrow > max_row or endrow > max_row then
-            break
-        end
-
-        if
-            (startrow < row or (startrow == row and startcol <= col))
-            and (endrow > row or (endrow == row and endcol >= col))
-        then
-            return
-        end
-    end
-    buf.clear_state()
 end
 
 function M.parse_snippet(snippet)
@@ -530,7 +350,7 @@ function M.expand_snippet(snippet, word)
     local lines = vim.split(content, '\n', true)
     api.nvim_set_option('undolevels', api.nvim_get_option('undolevels'))
     api.nvim_buf_set_text(0, row - 1, col, row - 1, col + #word, lines)
-    place_stops(stops)
+    buf.place_stops(stops)
     M.next()
     return ''
 end
@@ -581,24 +401,6 @@ function M.is_active()
     return buf.current_stop > 0 and not vim.tbl_isempty(buf.stops)
 end
 
-M.mapping = {
-    Expand = 'expand',
-    ExpandOrAdvance = 'expand_or_advance',
-    Next = 'next',
-    Previous = 'previous',
-    CutText = 'cut_text',
-}
-
--- Setup
-
-vim.cmd([[
-    augroup snippy
-    autocmd!
-    autocmd FileType,InsertEnter * lua require 'snippy'.read_snippets()
-    autocmd BufWritePost *.snippet{,s} lua require 'snippy'.clear_cache()
-    augroup END
-]])
-
 M.snippets = {}
 M.readers = {
     snipmate_reader,
@@ -629,6 +431,17 @@ function M.complete_snippet_files(prefix)
     end
     return results
 end
+
+-------------------------------------------------------------------------------
+-- Setup
+-------------------------------------------------------------------------------
+
+vim.cmd([[
+    augroup snippy
+    autocmd!
+    autocmd FileType * lua require 'snippy'.read_snippets()
+    augroup END
+]])
 
 function M.setup(o)
     shared.set_config(o)

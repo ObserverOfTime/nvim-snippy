@@ -1,7 +1,9 @@
 local shared = require('snippy.shared')
+local util = require('snippy.util')
 
 local Stop = require('snippy.stop')
 
+local fn = vim.fn
 local api = vim.api
 local cmd = vim.cmd
 
@@ -186,14 +188,190 @@ function M.fix_current_stop()
     end
 end
 
-function M.clear_state()
-    for _, stop in pairs(M.state().stops) do
-        api.nvim_buf_del_extmark(0, shared.namespace, stop.mark)
+-------------------------------------------------------------------------------
+-- Place stops
+-------------------------------------------------------------------------------
+
+--- Create ids for id-less tabstops and named placeholders.
+--- @param stops table
+local function create_missing_ids(stops)
+    local max_id = 0
+    -- find the maximum numbered tabstop/placeholder
+    -- numberless tabstops/placeholders will come after those
+    for _, stop in ipairs(stops) do
+        if stop.id then
+            if max_id < stop.id then
+                max_id = stop.id
+            end
+        end
     end
-    M.state().current_stop = 0
-    M.state().stops = {}
-    M.state().before = nil
-    M.clear_autocmds()
+    -- create ids for yet id-less stops
+    local ns = #stops
+    local last_is_zero = stops[ns].id == 0
+    for i, stop in ipairs(stops) do
+        if not stop.id then
+            if last_is_zero and i == ns - 1 then
+                stop.id = 0
+                table.remove(stops)
+                break
+            end
+            max_id = max_id + 1
+            if stop.name and stop.name ~= '_' then
+                for _, st in ipairs(stops) do
+                    if st.name == stop.name then
+                        st.id = max_id
+                    end
+                end
+            else
+                if stop.name == '_' then stop.name = nil end
+                stop.id = max_id
+            end
+        end
+    end
+end
+
+--- Sort the tabstops. If id == 0, it comes last, if ids are different, lower
+--- id comes first. If it's the same named placeholder, the one with a default
+--- value comes first.
+--- @param stops table: the unsorted tabstops
+--- @return table: sorted tabstops
+local function sort_stops(stops)
+    table.sort(stops, function(s1, s2)
+        if s1.id == 0 then
+            return false
+        elseif s2.id == 0 then
+            return true
+        elseif s1.name and s1.name == s2.name then
+            return ( next(s1.children) and not next(s2.children) )
+        elseif s2.name and s1.name == s2.name then
+            return ( next(s2.children) and not next(s1.children) )
+        elseif s1.id < s2.id then
+            return true
+        elseif s1.id > s2.id then
+            return false
+        end
+        return util.is_before(s1.startpos, s2.startpos)
+    end)
+end
+
+local function make_unique_ids(stops)
+    local max_id = M.max_id or 0
+    local id_map = {}
+    for _, stop in ipairs(stops) do
+        if id_map[stop.id] then
+            stop.id = id_map[stop.id]
+        else
+            max_id = max_id + 1
+            id_map[stop.id] = max_id
+            stop.id = max_id
+        end
+    end
+    for _, stop in ipairs(stops) do
+        if stop.parent then
+            stop.parent = id_map[stop.parent]
+        end
+    end
+    M.max_id = max_id
+end
+
+function M.place_stops(stops)
+    create_missing_ids(stops)
+    sort_stops(stops)
+    make_unique_ids(stops)
+    local pos = M.current_stop + 1
+    for _, spec in ipairs(stops) do
+        M.add_stop(spec, pos)
+        pos = pos + 1
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Mirror stops
+-------------------------------------------------------------------------------
+
+function M.mirror_stop(number)
+    local stops = M.stops
+    if number < 1 or number > #stops then
+        return
+    end
+    local value = stops[number]
+    local text = value:get_text()
+    for i, stop in ipairs(stops) do
+        if i > number and stop.id == value.id then
+            stop:set_text(text)
+        end
+    end
+    if value.spec.type == 'placeholder' then
+        if text ~= value.placeholder then
+            M.clear_children(number)
+        end
+    end
+end
+
+-------------------------------------------------------------------------------
+-- Autocommands
+-------------------------------------------------------------------------------
+
+local function did_undo()
+    local ut = fn.undotree()
+    return ut.seq_last ~= ut.seq_cur
+end
+
+-- Check if the cursor is inside any stop
+local function check_position()
+    local stops = M.stops
+    local row, col = unpack(api.nvim_win_get_cursor(0))
+    row = row - 1
+    local max_row = vim.api.nvim_buf_line_count(0) - 1
+    for _, stop in ipairs(stops) do
+        local from, to = stop:get_range()
+        local startrow, startcol = unpack(from)
+        local endrow, endcol = unpack(to)
+        if fn.mode() == 'n' then
+            if startcol + 1 == fn.col('$') then
+                startcol = startcol - 1
+            end
+            if endcol + 1 == fn.col('$') then
+                endcol = endcol - 1
+            end
+        end
+
+        if startrow > max_row or endrow > max_row then
+            break
+        end
+
+        if
+            (startrow < row or (startrow == row and startcol <= col))
+            and (endrow > row or (endrow == row and endcol >= col))
+        then
+            return
+        end
+    end
+    M.clear_state()
+end
+
+function M._TextChanged()
+    if did_undo() then
+        M.clear_state()
+        return
+    end
+    M.fix_current_stop()
+    M.update_state()
+    if M.current_stop ~= 0 then
+        M.mirror_stop(M.current_stop)
+    end
+end
+
+function M._TextChangedP()
+    M.fix_current_stop()
+end
+
+function M._CursorMoved()
+    check_position()
+end
+
+function M._BufWritePost()
+    check_position()
 end
 
 function M.setup_autocmds()
@@ -202,10 +380,10 @@ function M.setup_autocmds()
         [[
             augroup snippy_local
             autocmd! * <buffer=%s>
-            autocmd TextChanged,TextChangedI <buffer=%s> lua require 'snippy'._handle_TextChanged()
-            autocmd TextChangedP <buffer=%s> lua require 'snippy'._handle_TextChangedP()
-            autocmd CursorMoved,CursorMovedI <buffer=%s> lua require 'snippy'._handle_CursorMoved()
-            autocmd BufWritePost <buffer=%s> lua require 'snippy'._handle_BufWritePost()
+            autocmd TextChanged,TextChangedI <buffer=%s> lua require 'snippy.buf'._TextChanged()
+            autocmd TextChangedP <buffer=%s> lua require 'snippy.buf'._TextChangedP()
+            autocmd CursorMoved,CursorMovedI <buffer=%s> lua require 'snippy.buf'._CursorMoved()
+            autocmd BufWritePost <buffer=%s> lua require 'snippy.buf'._BufWritePost()
             augroup END
         ]],
         bufnr,
@@ -214,6 +392,21 @@ function M.setup_autocmds()
         bufnr,
         bufnr
     ))
+end
+
+-------------------------------------------------------------------------------
+-- State clearing
+-------------------------------------------------------------------------------
+
+function M.clear_state()
+    for _, stop in pairs(M.state().stops) do
+        api.nvim_buf_del_extmark(0, shared.namespace, stop.mark)
+    end
+    M.state().current_stop = 0
+    M.state().stops = {}
+    M.state().before = nil
+    M.max_id = 0
+    M.clear_autocmds()
 end
 
 function M.clear_autocmds()
