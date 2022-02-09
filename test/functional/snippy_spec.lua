@@ -43,7 +43,7 @@ describe('Snippy', function()
 
     it('can detect current scope', function()
         command('set filetype=lua')
-        eq({ _ = {}, lua = {} }, exec_lua([[return snippy.snippets]]))
+        eq({ _ = {}, lua = {} }, exec_lua([[return require'snippy.cache'.snippets]]))
     end)
 
     it('can insert a basic snippet', function()

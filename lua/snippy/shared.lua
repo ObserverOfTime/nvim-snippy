@@ -1,21 +1,5 @@
 local M = {}
 
-local function get_scopes()
-    local scopes = vim.tbl_flatten({ '_', vim.split(vim.bo.filetype, '.', true) })
-
-    if M.config.scopes['_'] then
-        local global_scopes = M.config.scopes['_']
-        scopes = type(global_scopes) == 'table' and global_scopes or global_scopes(scopes)
-    end
-
-    if M.config.scopes and M.config.scopes[vim.bo.filetype] then
-        local ft_scopes = M.config.scopes[vim.bo.filetype]
-        scopes = type(ft_scopes) == 'table' and ft_scopes or ft_scopes(scopes)
-    end
-
-    return scopes
-end
-
 local default_config = {
     snippet_dirs = nil,
     hl_group = nil,
@@ -25,9 +9,9 @@ local default_config = {
     generic_tabstops = true,
 }
 
-M.get_scopes = get_scopes
 M.namespace = vim.api.nvim_create_namespace('snippy')
 M.config = vim.tbl_extend('force', {}, default_config)
+M.readers = {}
 
 function M.set_selection(value, mode)
     if mode == 'V' or mode == 'line' then
@@ -65,7 +49,5 @@ function M.set_config(params)
     end
     M.config = vim.tbl_extend('force', M.config, params)
 end
-
-M.cache = {}
 
 return M

@@ -1,5 +1,6 @@
 local fn = vim.fn
 local shared = require('snippy.shared')
+local cache = require('snippy.cache')
 
 local M = {}
 
@@ -43,11 +44,11 @@ end
 --- 2. snippets in 'site/snippets' (eg. ~/.local/share/nvim/site/snippets)
 --- 3. snippets in 'after' directories
 --- 4. snippets in directories from settings
---- 5. project-local snippets
+--- 5. project-local snippets (handled in read_snippets)
 --- @return string: comma-separated list of directories
 function M.list_dirs()
-    if shared.cache.directories then
-        return shared.cache.directories
+    if cache.directories then
+        return cache.directories
     end
     local dirs = snip_dirs(rtp_dirs())
     if shared.config.snippet_dirs then
@@ -59,10 +60,7 @@ function M.list_dirs()
             dirs = dirs .. ',' .. udirs
         end
     end
-    if fn.isdirectory('.snippets') then
-        dirs = dirs .. ',' .. fn.fnamemodify('.snippets', ':p')
-    end
-    shared.cache.directories = dirs
+    cache.directories = dirs
     return dirs
 end
 

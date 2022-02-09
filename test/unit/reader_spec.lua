@@ -39,7 +39,7 @@ end
 
 describe('Snippet reader', function()
     before_each(function()
-        snippy.clear_cache()
+        require 'snippy.cache'.clear_cache()
     end)
 
     it('can read snippets', function()

@@ -21,4 +21,4 @@ xnoremap <silent> <plug>(snippy-cut-text) <cmd>call snippy#cut_text(mode(), v:tr
 command! -bang -nargs=? -complete=customlist,snippy#complete
             \ Snippets   call snippy#open(<q-args>, <bang>0)
 
-command! SnippetsReload lua require 'snippy'.clear_cache()
+command! SnippetsReload lua require 'snippy.cache'.clear_cache()

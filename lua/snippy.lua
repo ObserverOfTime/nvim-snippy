@@ -1,7 +1,7 @@
-local snipmate_reader = require('snippy.reader.snipmate')
 local buf = require('snippy.buf')
 local shared = require('snippy.shared')
 local util = require('snippy.util')
+local cache = require('snippy.cache')
 
 local Builder = require('snippy.builder')
 
@@ -92,7 +92,6 @@ end
 -- Snippet management
 
 local function get_snippet_at_cursor()
-    M.read_snippets()
     local lnum, col = unpack(api.nvim_win_get_cursor(0))
 
     local line_to_col = api.nvim_get_current_line():sub(1, col)
@@ -100,13 +99,13 @@ local function get_snippet_at_cursor()
     local word_bound = line_to_col:match('([_%w]+)$') or line_to_col:match('([^%p%s%c]*)$')
     local bol = word == line_to_col
     local bof = lnum == 1 and word == line_to_col
-    local scopes = shared.get_scopes()
+    local snippets = cache.snippets or cache.cache_snippets()
 
     while #word > 0 do
-        for _, scope in ipairs(scopes) do
-            if scope and M.snippets[scope] then
-                if M.snippets[scope][word] then
-                    local snippet = M.snippets[scope][word]
+        for _, scope in ipairs(cache.get_scopes()) do
+            if scope and snippets[scope] then
+                if snippets[scope][word] then
+                    local snippet = snippets[scope][word]
                     if snippet.option.inword then
                         -- Match inside word
                         return word, snippet
@@ -190,13 +189,12 @@ function M.complete_done()
 end
 
 function M.get_completion_items()
-    M.read_snippets()
     local items = {}
-    local scopes = shared.get_scopes()
+    local snippets = cache.snippets or cache.cache_snippets()
 
-    for _, scope in ipairs(scopes) do
-        if scope and M.snippets[scope] then
-            for _, snip in pairs(M.snippets[scope]) do
+    for _, scope in ipairs(cache.get_scopes()) do
+        if scope and snippets[scope] then
+            for _, snip in pairs(snippets[scope]) do
                 table.insert(items, {
                     word = snip.prefix,
                     abbr = snip.prefix,
@@ -401,26 +399,9 @@ function M.is_active()
     return buf.current_stop > 0 and not vim.tbl_isempty(buf.stops)
 end
 
-M.snippets = {}
-M.readers = {
-    snipmate_reader,
-}
-
-function M.read_snippets()
-    for _, reader in ipairs(M.readers) do
-        local snips = reader.read_snippets()
-        M.snippets = vim.tbl_extend('force', M.snippets, snips)
-    end
-end
-
-function M.clear_cache()
-    shared.cache = {}
-    M.snippets = {}
-end
-
 function M.complete_snippet_files(prefix)
     local files = {}
-    for _, reader in ipairs(M.readers) do
+    for _, reader in ipairs(shared.readers) do
         vim.list_extend(files, reader.list_existing_files())
     end
     local results = {}
@@ -439,12 +420,13 @@ end
 vim.cmd([[
     augroup snippy
     autocmd!
-    autocmd FileType * lua require 'snippy'.read_snippets()
+    autocmd FileType,BufReadPost,DirChanged * lua require 'snippy.cache'.cache_snippets()
     augroup END
 ]])
 
 function M.setup(o)
     shared.set_config(o)
+    table.insert(shared.readers, require('snippy.reader.snipmate'))
     require('snippy.mapping').init()
 end
 
