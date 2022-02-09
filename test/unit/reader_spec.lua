@@ -1,4 +1,41 @@
 local snippy = require('snippy')
+local list_dirs = require('snippy.directories').list_dirs
+
+local exprs = {
+    '%s.snippets',
+    '%s_*.snippets',
+    '%s/*.snippets',
+    '%s/*.snippet',
+    '%s/*/*.snippet',
+}
+
+local patterns = {
+    '/(.-)/.-%.snippets',
+    '/(.-)/.-%.snippet',
+    '/(_).-%.snippets',
+    '/(.-)_.-%.snippets',
+    '/(.-)%.snippets',
+    '/(.-)%.snippet',
+}
+
+local function list_available_scopes()
+    local dirs = list_dirs()
+    local scopes = {}
+    for _, expr in ipairs(exprs) do
+        local e = expr:format('*')
+        local paths = vim.fn.globpath(dirs, e, 0, 1)
+        for _, path in ipairs(paths) do
+            for _, pat in ipairs(patterns) do
+                local m = path:match(pat)
+                if m then
+                    scopes[m] = true
+                    break
+                end
+            end
+        end
+    end
+    return vim.tbl_keys(scopes)
+end
 
 describe('Snippet reader', function()
     before_each(function()
@@ -13,7 +50,7 @@ describe('Snippet reader', function()
             test2 = { kind = 'snipmate', prefix = 'test2', option = {}, body = { 'This is the second test.' } },
         }
         assert.is_truthy(require('snippy.shared').config.snippet_dirs)
-        assert.is_not.same({}, require('snippy.reader.snipmate').list_available_scopes())
+        assert.is_not.same({}, list_available_scopes())
         assert.is_same({ _ = snips }, snippy.snippets)
     end)
 
@@ -37,7 +74,7 @@ describe('Snippet reader', function()
                 },
             },
         }
-        assert.is_not.same({}, require('snippy.reader.snipmate').list_available_scopes())
+        assert.is_not.same({}, list_available_scopes())
         assert.is_same(snips, snippy.snippets.php)
     end)
 
@@ -58,7 +95,7 @@ describe('Snippet reader', function()
             },
         }
         assert.is_truthy(require('snippy.shared').config.snippet_dirs)
-        assert.is_not.same({}, require('snippy.reader.snipmate').list_available_scopes())
+        assert.is_not.same({}, list_available_scopes())
         assert.is_same(snips, snippy.snippets.custom)
     end)
 
@@ -66,7 +103,7 @@ describe('Snippet reader', function()
         snippy.setup({ snippet_dirs = './test/snippets/' })
         vim.cmd('set filetype=java')
         assert.is_truthy(require('snippy.shared').config.snippet_dirs)
-        assert.is_not.same({}, require('snippy.reader.snipmate').list_available_scopes())
+        assert.is_not.same({}, list_available_scopes())
         assert.is_same({ beginning = true }, snippy.snippets.java.cls.option)
     end)
 
@@ -80,7 +117,7 @@ describe('Snippet reader', function()
                 end,
             },
         })
-        local scopes = require('snippy.reader.snipmate').list_available_scopes()
+        local scopes = list_available_scopes()
         assert.is_not.same({}, scopes)
         local total_failed = {}
         local count = 0

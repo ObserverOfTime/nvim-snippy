@@ -172,33 +172,6 @@ local function load_scope(scope, stack)
     return snips
 end
 
-function M.list_available_scopes()
-    local dirs = list_dirs()
-    local patterns = {
-        '/(.-)/.-%.snippets',
-        '/(.-)/.-%.snippet',
-        '/(_).-%.snippets',
-        '/(.-)_.-%.snippets',
-        '/(.-)%.snippets',
-        '/(.-)%.snippet',
-    }
-    local scopes = {}
-    for _, expr in ipairs(exprs) do
-        local e = expr:format('*')
-        local paths = fn.globpath(dirs, e, 0, 1)
-        for _, path in ipairs(paths) do
-            for _, pat in ipairs(patterns) do
-                local m = path:match(pat)
-                if m then
-                    scopes[m] = true
-                    break
-                end
-            end
-        end
-    end
-    return vim.tbl_keys(scopes)
-end
-
 function M.list_existing_files()
     local files = {}
     local get_scopes = shared.get_scopes
