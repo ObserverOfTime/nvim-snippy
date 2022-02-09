@@ -448,8 +448,4 @@ function M.setup(o)
     require('snippy.mapping').init()
 end
 
-function M.setup_buffer(bufnr, o)
-    shared.set_buffer_config(bufnr, o)
-end
-
 return M

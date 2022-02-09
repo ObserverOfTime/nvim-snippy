@@ -13,12 +13,6 @@ local function get_scopes()
         scopes = type(ft_scopes) == 'table' and ft_scopes or ft_scopes(scopes)
     end
 
-    local buf_config = M.buffer_config[vim.fn.bufnr(0)]
-    if buf_config then
-        local buf_scopes = buf_config.scopes
-        scopes = type(buf_scopes) == 'table' and buf_scopes or buf_scopes(scopes)
-    end
-
     return scopes
 end
 
@@ -34,7 +28,6 @@ local default_config = {
 M.get_scopes = get_scopes
 M.namespace = vim.api.nvim_create_namespace('snippy')
 M.config = vim.tbl_extend('force', {}, default_config)
-M.buffer_config = {}
 
 function M.set_selection(value, mode)
     if mode == 'V' or mode == 'line' then
@@ -71,14 +64,6 @@ function M.set_config(params)
         end
     end
     M.config = vim.tbl_extend('force', M.config, params)
-end
-
-function M.set_buffer_config(bufnr, params)
-    vim.validate({
-        bufnr = { bufnr, 'n' },
-        params = { params, 't' },
-    })
-    M.buffer_config[vim.fn.bufnr(bufnr)] = params
 end
 
 M.cache = {}

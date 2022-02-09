@@ -9,7 +9,6 @@ CONTENTS                                                     *snippy-contents*
     USAGE................................|snippy-usage|
     SNIPPET SYNTAX.......................|snippy-snippet-syntax|
     OPTIONS..............................|snippy-options|
-    BUFFER OPTIONS.......................|snippy-bufer-options|
     COMMANDS.............................|snippy-commands|
     FUNCTIONS............................|snippy-functions|
     ADVANCED SETUP.......................|snippy-advanced-setup|
@@ -365,26 +364,6 @@ scopes ~
         }
 <
 ==============================================================================
-BUFFER OPTIONS                                         *snippy-buffer-options*
-
-It's also possible to define options for a specific buffer using the
-|snippy.setup_buffer()| function. Example:
->
-    autocmd BufRead,BufNewFile *_spec.lua lua require('snippy').setup_buffer(0,
-        \ { scopes = { '_', 'lua', 'busted' } })
-<
-The following options are supported:
-
-scopes ~
-        Type: ||Table|
-        Default: nil
-
-    Can be set to a table containing a list of scopes or a function that
-    receives the calculated list of scopes for the current buffer and should
-    return a new (possibly modified) list of scopes.
-
-
-==============================================================================
 COMMANDS                                                     *snippy-commands*
 
 :Snippets[!] {file}                                                 *:Snippets*
@@ -412,12 +391,6 @@ FUNCTIONS                                                   *snippy-functions*
 `snippy.setup`({options})                                       *snippy.setup()*
 
     Set initial configuration for the plugin. See also |snippy-options|.
-
-
-`snippy.setup_buffer`({bufnr}, {options})                *snippy.setup_buffer()*
-
-    Set configuration for the current buffer. See also
-    |snippy-buffer-options|.
 
 
 `snippy.can_expand`()                                      *snippy.can_expand()*
