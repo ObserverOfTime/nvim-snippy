@@ -95,8 +95,9 @@ local function get_snippet_at_cursor()
     local lnum, col = unpack(api.nvim_win_get_cursor(0))
 
     local line_to_col = api.nvim_get_current_line():sub(1, col)
+    local nows_line_to_col = line_to_col:gsub('^%s*', '')
     local word = line_to_col:match('(%S*)$')
-    local word_bound = line_to_col:match('([_%w]+)$') or line_to_col:match('([^%p%s%c]*)$')
+    local word_bound = fn.matchstr(word, '\\k\\+$')
     local bol = word == line_to_col
     local bof = lnum == 1 and word == line_to_col
     local snippets = cache.snippets or cache.cache_snippets()
@@ -121,7 +122,7 @@ local function get_snippet_at_cursor()
                         end
                     elseif snippet.option.beginning then
                         -- Match if word is first on line (trimmed)
-                        if word == line_to_col:gsub('^%s*', '') then
+                        if word == nows_line_to_col then
                             return word, snippet
                         end
                     elseif word_bound == word then
