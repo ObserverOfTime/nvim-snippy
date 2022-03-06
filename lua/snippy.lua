@@ -104,31 +104,29 @@ local function get_snippet_at_cursor()
 
     while #word > 0 do
         for _, scope in ipairs(cache.get_scopes()) do
-            if scope and snippets[scope] then
-                if snippets[scope][word] then
-                    local snippet = snippets[scope][word]
-                    if snippet.option.inword then
-                        -- Match inside word
-                        return word, snippet
-                    elseif snippet.option.bof then
-                        -- Match if word is first on file
-                        if bof then
-                            return word, snippet
-                        end
-                    elseif snippet.option.bol then
-                        -- Match if word is first on line (absolute)
-                        if bol then
-                            return word, snippet
-                        end
-                    elseif snippet.option.beginning then
-                        -- Match if word is first on line (trimmed)
-                        if word == nows_line_to_col then
-                            return word, snippet
-                        end
-                    elseif word_bound == word then
-                        -- By default only match on word boundary
+            if scope and snippets[scope] and snippets[scope][word] then
+                local snippet = snippets[scope][word]
+                if snippet.option.inword then
+                    -- Match inside word
+                    return word, snippet
+                elseif snippet.option.bof then
+                    -- Match if word is first on file
+                    if bof then
                         return word, snippet
                     end
+                elseif snippet.option.bol then
+                    -- Match if word is first on line (absolute)
+                    if bol and word == word_bound then
+                        return word, snippet
+                    end
+                elseif snippet.option.beginning then
+                    -- Match if word is first on line (trimmed)
+                    if word == nows_line_to_col then
+                        return word, snippet
+                    end
+                elseif word_bound == word then
+                    -- By default only match on word boundary
+                    return word, snippet
                 end
             end
         end
