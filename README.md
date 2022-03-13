@@ -22,7 +22,7 @@ Install using your favorite plugin manager.
 Using vim-plug:
 
 ```vim
-Plug 'dcampos/nvim-snippy'
+Plug 'ObserverOfTime/nvim-snippy'
 ```
 
 There are no snippets installed by default. You can create your own, or install

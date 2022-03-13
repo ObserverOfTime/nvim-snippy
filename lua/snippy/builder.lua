@@ -251,7 +251,8 @@ function Builder:fix_ending()
         end
     end
     table.insert(
-        self.stops, { type = 'tabstop', id = 0, startpos = { self.row, self.col }, endpos = { self.row, self.col } }
+        self.stops,
+        { type = 'tabstop', id = 0, startpos = { self.row, self.col }, endpos = { self.row, self.col } }
     )
 end
 

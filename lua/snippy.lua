@@ -66,8 +66,8 @@ local function make_completion_choices(choices)
         table.insert(items, {
             word = value,
             abbr = value,
-            menu = '[Snippy]',
-            kind = 'Choice',
+            menu = '',
+            kind = '',
         })
     end
     return items
@@ -195,12 +195,22 @@ end
 
 function M.get_completion_items()
     local items = {}
+
     local snippets = cache.snippets or cache.cache_snippets()
+    local lnum, col = unpack(api.nvim_win_get_cursor(0))
+
+    local line_to_col = api.nvim_get_current_line():sub(1, col)
+    local nows_line_to_col = line_to_col:gsub('^%s*', '')
+    local word = line_to_col:match('(%S*)$')
+    local default = fn.matchstr(line_to_col, '\\v%(^|\\s+)\\zs\\S+$')
+    local word_bound = fn.matchstr(word, '\\k\\+$')
+    local bol = word == line_to_col
+    local bof = lnum == 1 and word == line_to_col
 
     for _, scope in ipairs(cache.get_scopes()) do
         if scope and snippets[scope] then
             for _, snip in pairs(snippets[scope]) do
-                table.insert(items, {
+                local item = {
                     word = snip.prefix,
                     abbr = snip.prefix,
                     kind = 'Snippet',
@@ -210,7 +220,34 @@ function M.get_completion_items()
                             snippet = snip,
                         },
                     },
-                })
+                }
+                if snip.option.inword then
+                    -- Match inside word
+                    table.insert(items, item)
+                elseif snip.option.bof then
+                    -- Match if word is first on file
+                    if bof then
+                        table.insert(items, item)
+                    end
+                elseif snip.option.bol then
+                    -- Match if word is first on line (absolute)
+                    if bol and word == word_bound then
+                        table.insert(items, item)
+                    end
+                elseif snip.option.beginning then
+                    -- Match if word is first on line (trimmed)
+                    if word == nows_line_to_col then
+                        table.insert(items, item)
+                    end
+                elseif snip.option.word then
+                    -- Match on word boundary, also with non-whitespace
+                    if word_bound == word then
+                        table.insert(items, item)
+                    end
+                elseif default == word then
+                    -- Match on word boundary, preceded by whitespace
+                    table.insert(items, item)
+                end
             end
         end
     end
@@ -446,7 +483,9 @@ vim.cmd([[
 ]])
 
 function M.setup(o)
-    shared.set_config(o)
+    shared.set_config(o or {
+        mappings = {x = {['s'] = 'cut_text'}}
+    })
     table.insert(shared.readers, require('snippy.reader.snipmate'))
     require('snippy.mapping').init()
 end
