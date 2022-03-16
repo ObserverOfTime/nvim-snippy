@@ -16,13 +16,13 @@ local exprs = {
 
 local function parse_options(prefix, opt)
     if not opt then
-        return { word = true }
+        return {}
     end
     local inword = opt:find('i') and true
     local beginning = opt:find('b') and true
     local bof = opt:find('%#') and true
     local bol = opt:find('%^') and true
-    local word = not inword and not beginning and not bof and not bol
+    local word = opt:find('w') and true
     local lines = opt:match('_') and opt:match('_+'):len()
 
     local invalid = opt:match('[^b^#wi_]')
