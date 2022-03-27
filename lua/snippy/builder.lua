@@ -129,7 +129,9 @@ function Builder:indent_lines(lines, is_expansion)
             if is_expansion and line ~= '' then
                 line = self.extra_indent .. line
             end
-            line = self.indent .. line
+            if line ~= '' then
+                line = self.indent .. line
+            end
         end
         lines[i] = line
     end
@@ -251,8 +253,7 @@ function Builder:fix_ending()
         end
     end
     table.insert(
-        self.stops,
-        { type = 'tabstop', id = 0, startpos = { self.row, self.col }, endpos = { self.row, self.col } }
+        self.stops, { type = 'tabstop', id = 0, startpos = { self.row, self.col }, endpos = { self.row, self.col } }
     )
 end
 
