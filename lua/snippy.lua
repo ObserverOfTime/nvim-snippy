@@ -97,7 +97,7 @@ local function get_snippet_at_cursor()
     local line_to_col = api.nvim_get_current_line():sub(1, col)
     local nows_line_to_col = line_to_col:gsub('^%s*', '')
     local word = line_to_col:match('(%S*)$')
-    local default = fn.matchstr(line_to_col, '\\%(^\\|\\s\\+\\)\\zs\\k\\+$')
+    local default = fn.matchstr(line_to_col, '\\v%(^|\\s+)\\zs\\S+$')
     local word_bound = fn.matchstr(word, '\\k\\+$')
     local bol = word == line_to_col
     local bof = lnum == 1 and word == line_to_col
