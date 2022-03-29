@@ -20,7 +20,7 @@ set foldtext=v:lua.SnippyFoldText()
 lua << EOF
 function SnippyFoldText()
     local line = vim.fn.getline(vim.v.foldstart)
-    local trigger = line:match('^%S+%s+(%S+)')
+    local trigger = line:match('^%S+%s+(%S+)') or line
     local desc = line:match('"(.*)"') or ''
     local opts = line:match('"%s+(%S+)$') or ''
     return string.format('%-15s%-40s%s', trigger, desc, opts)
