@@ -141,15 +141,47 @@ with the LSP syntax. A basic SniMate-style snippet looks like this:
     snippet trigger2 "Description for snippet 2" [options]
         This is the first line.
         This is the second line.
-<                                                    *snippy-snipmate-options*
+<                                                    *snippy-snipmate-extends*
+
+At the top of the snippets file, you can use the `extends` directive.
+The effect is to load the snippets defined for another scope.
+For example, in a `cpp` file, writing >
+    extends c
+<will load snippets for `c` files in addition to the ones for `cpp`.
+
+                        *snippy-snipmate-imports* *snippy-snipmate-importable*
+
+If the first line in the snippets file is just: >
+    importable
+<then snippets are not read unless some other snippets file imports them
+explicitly, with the `imports` statement. This can be useful in project-local
+snippets files, where you might want to import a set of snippets that is
+defined globally, but generally you don't want to use that set.
+
+An `importable` snippets file should be located in a {filetype} subdirectory,
+for example: >
+    snippets/c/sdl.snippets
+
+At the top of that file you use the `importable` directive: that file won't be
+read, but will be marked as importable.
+
+Then if another snippets file (for example, a project-local snippets file), has
+the directive: >
+    imports sdl
+<the file will be read and its snippets will be available.
+
+                                                     *snippy-snipmate-options*
 
 The `description` is optional, and could be used by completion plugins.
+
+By default, the snippet is expanded when the trigger is preceded by
+whitespaces.
 
 The `options` control the behavior of the expansion of the snippet and are
 optional. Currently supported are the following:
 
     `w  ` Word boundary: the word expands only when the trigger is on a word
-        boundary. This is the default behavior and can be omitted.
+        boundary. Ignores preceding whitespaces.
 
     `i  ` In-word expansion: the snippet expands even if the trigger is only
         part of the word, up to the cursor.

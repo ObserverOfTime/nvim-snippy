@@ -40,11 +40,22 @@ local function parse_options(prefix, opt)
     }
 end
 
-local function read_snippets_file(snippets_file)
+local function read_snippets_file(snippets_file, scope)
     local snips = {}
     local extends = {}
+    local imports = {}
     local file = io.open(snippets_file)
     local lines = vim.split(file:read('*a'), '\n')
+
+    if scope and lines[1] == 'importable' then
+        if not cache.importable[scope] then
+            cache.importable[scope] = {}
+        end
+        local basename = vim.fn.fnamemodify(snippets_file, ':t:r')
+        cache.importable[scope][basename] = snippets_file
+        return {}, {}, {}
+    end
+
     if lines[#lines] == '' then
         table.remove(lines)
     end
@@ -95,9 +106,14 @@ local function read_snippets_file(snippets_file)
         local line = lines[i]
         if line:sub(1, 7) == 'snippet' then
             _parse()
+        elseif line == 'importable' then
+            i = i + 1
         elseif line:sub(1, 7) == 'extends' then
             local scopes = vim.split(vim.trim(line:sub(8)), '%s+')
             vim.list_extend(extends, scopes)
+            i = i + 1
+        elseif line:sub(1, 7) == 'imports' then
+            table.insert(imports, line:sub(8):match('%S+'))
             i = i + 1
         elseif line:sub(1, 1) == '#' or vim.trim(line) == '' then
             -- Skip empty lines or comments
@@ -106,7 +122,7 @@ local function read_snippets_file(snippets_file)
             error(string.format('Invalid line in snippets file %s: %s', snippets_file, line))
         end
     end
-    return snips, extends
+    return snips, extends, imports
 end
 
 local function read_single_snippet_file(snippet_file, scope)
@@ -146,16 +162,24 @@ end
 local function load_scope(scope, stack, files)
     local snips = {}
     local extends = {}
+    local imports = {}
     for _, file in ipairs(files or list_files(scope)) do
         local result = {}
         local extended
         if file:match('.snippets$') then
-            result, extended = read_snippets_file(file)
+            result, extended, imports = read_snippets_file(file, scope)
             extends = vim.list_extend(extends, extended)
         elseif file:match('.snippet$') then
             result = read_single_snippet_file(file, scope)
         end
         snips = vim.tbl_extend('force', snips, result)
+    end
+    for _, import in ipairs(imports) do
+        if cache.importable[scope][import] then
+            local result, extended = read_snippets_file(cache.importable[scope][import])
+            extends = vim.list_extend(extends, extended)
+            snips = vim.tbl_extend('force', snips, result)
+        end
     end
     for _, extended in ipairs(extends) do
         if vim.tbl_contains(stack, extended) then

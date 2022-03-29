@@ -5,6 +5,7 @@ local M = {}
 M.directories = nil
 M.snippets = nil
 M.scopes = {}
+M.importable = {}
 
 function M.get_scopes()
     local ft = vim.bo.filetype
