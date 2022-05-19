@@ -25,6 +25,7 @@ local colon = token(':')
 local slash = token('/')
 local comma = token(',')
 local bar = token('|')
+local empty = token('')
 
 local varname = pattern('^[_a-zA-Z][_a-zA-Z0-9]*')
 
@@ -42,11 +43,11 @@ local flags = map(seq(slash, pattern('^[ig]*')), function(value)
     return value[2]
 end)
 
-local transform = map(seq(slash, text('/', ''), slash, text('[%/}]', ''), opt(flags)), function(value)
+local transform = map(seq(slash, text('/', ''), slash, one(text('[%/}]', ''), empty), opt(flags)), function(value)
     return {
         type = 'transform',
-        regex = value[2],
-        format = value[4],
+        regex = value[2].raw,
+        format = value[4] and value[4].raw or '',
         flags = value[5] or '',
     }
 end)
