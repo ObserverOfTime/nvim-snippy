@@ -384,6 +384,7 @@ function M.setup_autocmds()
             autocmd TextChangedP <buffer=%s> lua require 'snippy.buf'._TextChangedP()
             autocmd CursorMoved,CursorMovedI <buffer=%s> lua require 'snippy.buf'._CursorMoved()
             autocmd BufWritePost <buffer=%s> lua require 'snippy.buf'._BufWritePost()
+            autocmd OptionSet *runtimepath* lua require 'snippy.cache'.clear_cache()
             augroup END
         ]],
         bufnr,
