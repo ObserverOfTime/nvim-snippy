@@ -7,7 +7,7 @@ CONTENTS                                                     *snippy-contents*
 
     INTRODUCTION.........................|snippy-introduction|
     USAGE................................|snippy-usage|
-    SNIPPET SYNTAX.......................|snippy-snippet-syntax|
+    SNIPPETS SYNTAX......................|snippy-syntax|
     OPTIONS..............................|snippy-options|
     COMMANDS.............................|snippy-commands|
     FUNCTIONS............................|snippy-functions|
@@ -81,7 +81,7 @@ From lower to higher priority:
 Files with the `.snippet` extension contain a single snippet each, whereas
 files with the `.snippets` extension can be used to declare multiple snippets.
 
-See |snippy-snipmate-syntax|.
+See |snippy-syntax|.
 
                                                          *snippy-usage-scopes*
 
@@ -115,7 +115,7 @@ https://github.com/Microsoft/language-server-protocol/blob/main/snippetSyntax.md
 The only point where Snippy deviates from the LSP syntax in in the handling of
 transformations. Transformations are very complex and require support for
 Javascript regex parsing. Instead we support Vim-based regular expressions and
-a simplified format, which see |snippy-snipmate-transform| below for more
+a simplified format, which see |snippy-transform| below for more
 details.
 
 Note: the LSP syntax is only supported when expanding LSP provided completion
@@ -124,24 +124,29 @@ syntax is used instead.
 
 
 ------------------------------------------------------------------------------
-SnipMate's Syntax                                     *snippy-snipmate-syntax*
+Snippets Syntax                                                *snippy-syntax*
 
-SnipMate syntax is also based on the TextMate syntax and so largely compatible
-with the LSP syntax. A basic SniMate-style snippet looks like this:
+Snippy uses SnipMate, that syntax is also based on the TextMate syntax and so
+largely compatible with the LSP syntax. A basic SnipMate-style snippet looks
+like this:
 >
     for (${1:i} = 0; $1 < ${2:limit}; $1++) {
         System.out.println($1);
     }
 <
-`.snippets` files can declare multiple snippets the following format:
+`.snippets` files can declare multiple snippets using the following format:
 >
     snippet trigger1 "Description for snippet 1" [options]
         This is the first line.
         This is the second line.
+
     snippet trigger2 "Description for snippet 2" [options]
         This is the first line.
         This is the second line.
-<                                                    *snippy-snipmate-extends*
+
+The last empty line after a snippet will not be considered part of the snippet
+body. Additional empty lines will be.
+                                                               *snippy-extends*
 
 At the top of the snippets file, you can use the `extends` directive.
 The effect is to load the snippets defined for another scope.
@@ -149,7 +154,7 @@ For example, in a `cpp` file, writing >
     extends c
 <will load snippets for `c` files in addition to the ones for `cpp`.
 
-                        *snippy-snipmate-imports* *snippy-snipmate-importable*
+                                          *snippy-imports* *snippy-importable*
 
 If the first line in the snippets file is just: >
     importable
@@ -165,12 +170,12 @@ for example: >
 At the top of that file you use the `importable` directive: that file won't be
 read, but will be marked as importable.
 
-Then if another snippets file (for example, a project-local snippets file), has
-the directive: >
+Then if another snippets file (for example, a project-local snippets file),
+has the directive: >
     imports sdl
 <the file will be read and its snippets will be available.
 
-                                                     *snippy-snipmate-options*
+                                                      *snippy-snippet-options*
 
 The `description` is optional, and could be used by completion plugins.
 
@@ -199,14 +204,14 @@ optional. Currently supported are the following:
 
     `G`   Disable |snippy-option| `generic_tabstops` for this snippet.
 
-                                                   *snippy-snipmate-indenting*
+                                                            *snippy-indenting*
 
 Default indentation in snippet definitions is with tabs, and it's recommended
 you leave it that way: when inserted in a buffer that uses spaces for
 indentation, it will be changed automatically at snippet insertion. So your
 snippets will use tabs if the file uses tabs, or spaces otherwise.
 
-                                                    *snippy-snipmate-tabstops*
+                                                             *snippy-tabstops*
 
 Tabstops and placeholders follow the TextMate syntax: >
     $1
@@ -220,7 +225,7 @@ Placeholders can have a `name` instead of a `number`:
     `${name:string}`    'string' is the placeholder default value
     `$name`             will mirror the previously defined `${name:...}`
 
-                                                     *snippy-snipmate-generic*
+                                                     *snippy-generic-tabstops*
 
 In addition to TextMate-style tabstops (`$1`, `${1}`, etc), simple tabstops
 can also be written with `${_}`, or `$_`, or also `___`, to simplify snippets.
@@ -240,16 +245,16 @@ Similarly, you can have generic placeholders: `${_:string}`.
 
 Note: tabstops `___` and `vvv` require |snippy-option| `generic_tabstops = true`,
       while tabstops `$_` and `${_}` are always available.
-      To disable `___` and `vvv` for a single snippet, use
+      To disable `___` and `vvv` for a single snippet, use |snippet-option| `G`.
 
 Note: when mixing generic and numbered placeholders, the latter can still be
-mirrored, but their order will be sequential, independent from the number
-they've been given. The only exception is tabstop `$0` that marks the end of
-the snippet: this can be placed anywhere in the snippet, if not present the
-snippet will end at the end of the snippet body, or at the last generic
-tabstop, if it's not followed by other tabstops.
+      mirrored, but their order will be sequential, independent from the
+      number they've been given. The only exception is tabstop `$0` that marks
+      the end of the snippet: this can be placed anywhere in the snippet, if
+      not present the snippet will end at the end of the snippet body, or at
+      the last generic tabstop, if it's not followed by other tabstops.
 
-                                                        *snippy-snipmate-eval*
+                                                        *snippy-eval*
 
 This syntax also allows Vim code to be evaluated inside backticks (``):
 >
@@ -278,7 +283,7 @@ Backtick blocks can span multiple lines (not if nested in placeholders!):
 		return x
 	end)(1)
 	`
-<                                                  *snippy-snipmate-transform*
+<                                                           *snippy-transform*
 
 Transformations are supported for tabstops and variables, with the caveat that
 Vim regular expressions are to be used instead of Javascript ones. The
@@ -290,7 +295,7 @@ Will result in:
 >
     This word will be changed to uppercase: WORD
 <
-                                                      *snippy-snipmate-visual*
+                                                               *snippy-visual*
 
 The special variable `$VISUAL` holds text previously selected and stored using
 the `snippy.cut_text()` function or the `<plug>(snippy-cut-text)` mapping.
