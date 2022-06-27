@@ -195,7 +195,9 @@ optional. Currently supported are the following:
         of the first line.
 
     `_  ` Ensure empty lines: ensure a number of empty lines after the snippet
-        equal to the number of underscores in the snippet options.
+        equal to the number of consecutive underscores in the snippet options.
+
+    `G`   Disable |snippy-option| `generic_tabstops` for this snippet.
 
                                                    *snippy-snipmate-indenting*
 
@@ -219,7 +221,6 @@ Placeholders can have a `name` instead of a `number`:
     `$name`             will mirror the previously defined `${name:...}`
 
                                                      *snippy-snipmate-generic*
-Requires |snippy-option| `generic_tabstops = true`
 
 In addition to TextMate-style tabstops (`$1`, `${1}`, etc), simple tabstops
 can also be written with `${_}`, or `$_`, or also `___`, to simplify snippets.
@@ -234,8 +235,12 @@ is equivalent to: >
     if $1 then
         $VISUAL
     end
-< 
+<
 Similarly, you can have generic placeholders: `${_:string}`.
+
+Note: tabstops `___` and `vvv` require |snippy-option| `generic_tabstops = true`,
+      while tabstops `$_` and `${_}` are always available.
+      To disable `___` and `vvv` for a single snippet, use
 
 Note: when mixing generic and numbered placeholders, the latter can still be
 mirrored, but their order will be sequential, independent from the number

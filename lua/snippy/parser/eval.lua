@@ -1,5 +1,4 @@
 local util = require('snippy.util')
-local fn = vim.fn
 
 local M = {}
 

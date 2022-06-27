@@ -12,31 +12,20 @@ local exprs = {
     '%s/*/*.snippet',
 }
 
+-- Valid characters for snippet options.
+local OPT_CHARS = 'wib#^_G'
+
 -- Loading
 
-local function parse_options(prefix, opt)
-    if not opt then
-        return {}
-    end
-    local inword = opt:find('i') and true
-    local beginning = opt:find('b') and true
-    local bof = opt:find('%#') and true
-    local bol = opt:find('%^') and true
-    local word = opt:find('w') and true
-    local lines = opt:match('_') and opt:match('_+'):len()
-
-    local invalid = opt:match('[^b^#wi_]')
-    if invalid then
-        error(string.format('Unknown option %s in snippet %s', invalid, prefix))
-    end
-
-    return {
-        word = word,
-        bol = bol,
-        bof = bof,
-        inword = inword,
-        beginning = beginning,
-        empty_lines = lines
+local function parse_options(opt)
+    return not opt and {} or {
+        word = opt:find('w') and true,
+        inword = opt:find('i') and true,
+        beginning = opt:find('b') and true,
+        bol = opt:find('%^') and true,
+        bof = opt:find('%#') and true,
+        empty_lines = opt:match('_') and opt:match('_+'):len(),
+        no_generic = opt:find('G') and true,
     }
 end
 
@@ -66,7 +55,7 @@ local function read_snippets_file(snippets_file, scope)
         local prefix = line:match('%s+(%S+)%s*')
         assert(prefix, 'prefix is nil: ' .. line .. ', file: ' .. snippets_file)
         local description = line:match('%s*"(.+)"%s*')
-        local option = parse_options(prefix, line:match('%s+%S+%s+([b^#wi_]+)$'))
+        local option = parse_options(line:match('%s+%S+%s+([' .. OPT_CHARS .. ']+)$'))
         local body = {}
         local indent = nil
         i = i + 1
@@ -89,7 +78,7 @@ local function read_snippets_file(snippets_file, scope)
                 break
             end
         end
-        -- allow an empty line after the snippet body
+        -- ignore the last empty line after the snippet body
         if body[#body] == '' then
           table.remove(body)
         end
