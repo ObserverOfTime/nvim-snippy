@@ -146,6 +146,10 @@ function M.activate_stop(number)
     end
     if value.spec.type == 'placeholder' then
         value.placeholder = value:get_text()
+        if not value.placeholder then
+            M.clear_state()
+            return
+        end
     end
     M.state().current_stop = number
     M.update_state()
@@ -296,6 +300,10 @@ function M.mirror_stop(number)
     end
     local value = stops[number]
     local text = value:get_text()
+    if not text then
+        M.clear_state()
+        return
+    end
     for i, stop in ipairs(stops) do
         if i > number and stop.id == value.id then
             stop:set_text(text)

@@ -27,6 +27,9 @@ end
 function Stop:get_text()
     local startpos, endpos = self:get_range()
     local lines = api.nvim_buf_get_lines(0, startpos[1], endpos[1] + 1, false)
+    if #lines == 0 then
+        return nil
+    end
     lines[#lines] = lines[#lines]:sub(1, endpos[2])
     lines[1] = lines[1]:sub(startpos[2] + 1)
     return table.concat(lines, '\n')
