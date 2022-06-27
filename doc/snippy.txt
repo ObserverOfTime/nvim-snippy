@@ -206,23 +206,23 @@ snippets will use tabs if the file uses tabs, or spaces otherwise.
 
                                                     *snippy-snipmate-tabstops*
 
-In addition to TextMate-style tabstops (`$1`, `${1}`, etc), simple tabstops
-can also be written with `${_}`, or `$_`. They are numberless and processed
-after numbered tabstops/placeholders, in the order they're found.
+Tabstops and placeholders follow the TextMate syntax: >
+    $1
+    ${2}
+    ${3:placeholder}
+<
+They are processed in the order of their number, and tabstops with the same
+number are mirrored.
 
 Placeholders can have a `name` instead of a `number`:
     `${name:string}`    'string' is the placeholder default value
     `$name`             will mirror the previously defined `${name:...}`
 
-Similarly, you can have numberless placeholders: `${_:string}`.
-Differently from named placeholders, they won't mirror each other, but will be
-processed independently, in the order they're found.
-
                                                      *snippy-snipmate-generic*
+Requires |snippy-option| `generic_tabstops = true`
 
-If the |snippy-option| `generic_tabstops` is enabled (it is by default), you
-can also write numberless tabstops with `___`, for better readability.
-
+In addition to TextMate-style tabstops (`$1`, `${1}`, etc), simple tabstops
+can also be written with `${_}`, or `$_`, or also `___`, to simplify snippets.
 The `vvv` tabstop can replace `$VISUAL` as well.
 
 For example: >
@@ -234,7 +234,17 @@ is equivalent to: >
     if $1 then
         $VISUAL
     end
-<                                                        *snippy-snipmate-eval*
+< 
+Similarly, you can have generic placeholders: `${_:string}`.
+
+Note: when mixing generic and numbered placeholders, the latter can still be
+mirrored, but their order will be sequential, independent from the number
+they've been given. The only exception is tabstop `$0` that marks the end of
+the snippet: this can be placed anywhere in the snippet, if not present the
+snippet will end at the end of the snippet body, or at the last generic
+tabstop, if it's not followed by other tabstops.
+
+                                                        *snippy-snipmate-eval*
 
 This syntax also allows Vim code to be evaluated inside backticks (``):
 >
@@ -282,7 +292,7 @@ the `snippy.cut_text()` function or the `<plug>(snippy-cut-text)` mapping.
 This is equivalent to the `$TM_SELECTED_TEXT` variable defined by the
 TextMate/LSP syntax.
 
-A `$VISUAL` variable is replaced by a numberless placeholder, if it's empty.
+A `$VISUAL` variable is replaced by a generic placeholder, if it's empty.
 
 
 
@@ -332,7 +342,7 @@ generic_tabstops ~
         Default: true
 
     Allow use of generic tabstops in forms:
-    `___`   numberless tabstop (same as `${_}`)
+    `___`   generic tabstop (same as `${_}`)
     `vvv`   cut text placeholder (same as `$VISUAL`)
 
 choice_delay~

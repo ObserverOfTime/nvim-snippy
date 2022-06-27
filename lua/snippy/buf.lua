@@ -199,37 +199,56 @@ end
 --- Create ids for id-less tabstops and named placeholders.
 --- @param stops table
 local function create_missing_ids(stops)
-    local max_id = 0
-    -- find the maximum numbered tabstop/placeholder
-    -- numberless tabstops/placeholders will come after those
+    -- see if generic tabstops are being used
+    local generic = false
     for _, stop in ipairs(stops) do
-        if stop.id then
-            if max_id < stop.id then
-                max_id = stop.id
-            end
+        if not stop.id then
+            generic = true
+            break
         end
     end
-    -- create ids for yet id-less stops
-    local ns = #stops
+    if not generic then -- leave tabstops as they are
+        return
+    end
+    -- create ids for yet id-less stops and nameless placeholders
+    local ns, max_id, ids = #stops, 0, {}
     local last_is_zero = stops[ns].id == 0
     for i, stop in ipairs(stops) do
-        if not stop.id then
-            if last_is_zero and i == ns - 1 then
-                stop.id = 0
-                table.remove(stops)
-                break
-            end
-            max_id = max_id + 1
-            if stop.name and stop.name ~= '_' then
-                for _, st in ipairs(stops) do
-                    if st.name == stop.name then
-                        st.id = max_id
-                    end
-                end
-            else
-                if stop.name == '_' then stop.name = nil end
+        if stop.id and ids[stop.id] then
+            -- mirrored tabstop
+            stop.id = ids[stop.id]
+        elseif stop.id then
+            -- numbered tabstop, except $0
+            if stop.id > 0 then
+                max_id = max_id + 1
+                ids[stop.id] = max_id
                 stop.id = max_id
             end
+        elseif last_is_zero and i == ns - 1 then
+            -- stop before last is id-less, remove the last one and this
+            -- becomes final tabstop, so that snippet terminates at last
+            -- tabstop, not at end of snippet body
+            stop.id = 0
+            table.remove(stops)
+            break
+        elseif i == ns and last_is_zero then
+            -- don't change last placeholder
+            break
+        elseif stop.name and stop.name ~= '_' then
+            if not ids[stop.name] then
+                -- new named tabstop
+                max_id = max_id + 1
+                ids[stop.name] = max_id
+                stop.id = max_id
+            else
+                -- mirrored named tabstop
+                stop.id = ids[stop.name]
+            end
+        else
+            -- id-less tabstop or placeholder
+            max_id = max_id + 1
+            stop.id = max_id
+            stop.name = nil
         end
     end
 end
