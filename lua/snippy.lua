@@ -270,6 +270,9 @@ function M._jump(stop)
     if #stops >= stop and stop > 0 then
         -- Disable autocmds so we can move freely
         buf.clear_autocmds()
+        buf.activate_stop(stop)
+        buf.mirror_stop(stop)
+
         local value = stops[stop]
         local startpos, endpos = value:get_range()
         local empty = startpos[1] == endpos[1] and endpos[2] == startpos[2]
@@ -285,9 +288,6 @@ function M._jump(stop)
         else
             select_stop(startpos, endpos)
         end
-
-        buf.activate_stop(stop)
-        buf.mirror_stop(stop)
     else
         should_finish = true
     end
