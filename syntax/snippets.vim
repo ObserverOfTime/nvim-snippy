@@ -5,7 +5,7 @@ runtime syntax/snippet.vim
 
 syn match snipComment '^#.*'
 
-syn match snipDirective '^[^s \t]\+.*' contains=snipKeyword,snipExtra
+syn match snipDirective '^[^s \t]\+.*' contains=snipKeyword,snipExtra,snipComment
 syn keyword snipKeyword extends imports importable version nextgroup=snipExtra contained
 syn match snipExtra     '\s\+.*' contained
 
