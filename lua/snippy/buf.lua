@@ -196,6 +196,22 @@ end
 -- Place stops
 -------------------------------------------------------------------------------
 
+--- Get correct type for id-less tabstop or placeholder.
+---@param stop table
+---@return string
+local function get_type(stop)
+  if stop.type == "tabstop" then
+    return "tabstop"
+  end
+  if not stop.name then
+    return "placeholder"
+  end
+  if stop.name == "_" and not next(stop.children or {}) then
+    return "tabstop"
+  end
+  return "placeholder"
+end
+
 --- Create ids for id-less tabstops and named placeholders.
 --- @param stops table
 local function create_missing_ids(stops)
@@ -229,6 +245,7 @@ local function create_missing_ids(stops)
             -- becomes final tabstop, so that snippet terminates at last
             -- tabstop, not at end of snippet body
             stop.id = 0
+            stop.type = get_type(stop)
             table.remove(stops)
             break
         elseif i == ns and last_is_zero then
@@ -248,6 +265,7 @@ local function create_missing_ids(stops)
             -- id-less tabstop or placeholder
             max_id = max_id + 1
             stop.id = max_id
+            stop.type = get_type(stop)
             stop.name = nil
         end
     end
