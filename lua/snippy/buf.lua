@@ -227,7 +227,7 @@ local function create_missing_ids(stops)
         return
     end
     -- create ids for yet id-less stops and nameless placeholders
-    local ns, max_id, ids = #stops, 0, {}
+    local ns, max_id, ids = #stops, M.max_id or 0, {}
     local last_is_zero = stops[ns].id == 0
     for i, stop in ipairs(stops) do
         if stop.id and ids[stop.id] then
@@ -336,17 +336,16 @@ end
 -------------------------------------------------------------------------------
 
 function M.mirror_stop(number)
-    local stops = M.stops
-    if number < 1 or number > #stops then
+    if number < 1 or number > #M.stops then
         return
     end
-    local value = stops[number]
+    local value = M.stops[number]
     local text = value:get_text()
     if not text then
         M.clear_state()
         return
     end
-    for i, stop in ipairs(stops) do
+    for i, stop in ipairs(M.stops) do
         if i > number and stop.id == value.id then
             stop:set_text(text)
         end
@@ -456,7 +455,7 @@ function M.clear_state()
     M.state().current_stop = 0
     M.state().stops = {}
     M.state().before = nil
-    M.max_id = 0
+    M.max_id = nil
     M.clear_autocmds()
 end
 
