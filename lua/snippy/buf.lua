@@ -11,17 +11,21 @@ local M = {}
 
 M._state = {}
 
+local state_keys = {
+    current_stop = true,
+    stops = true,
+    before = true
+}
+
 setmetatable(M, {
         __index = function(self, key)
             return self.state()[key] or rawget(self, key)
         end,
         __newindex = function(self, key, value)
-            if key == 'current_stop' then
-                self.state().current_stop = value
-            elseif key == 'stops' then
-                self.state().stops = value
+            if state_keys[key] then
+                self.state()[key] = value
             else
-                return rawset(self, key, value)
+                rawset(self, key, value)
             end
         end,
     })
@@ -103,6 +107,7 @@ function M.state()
         M._state[bufnr] = {
             stops = {},
             current_stop = 0,
+            before = false,
         }
     end
     return M._state[bufnr]
@@ -144,7 +149,7 @@ function M.activate_stop(number)
             return
         end
     end
-    M.state().current_stop = number
+    M.current_stop = number
     M.update_state()
 end
 
@@ -166,7 +171,7 @@ function M.update_state()
     if not current_stop then
         return
     end
-    M.state().before = current_stop:get_before()
+    M.before = current_stop:get_before()
 end
 
 function M.fix_current_stop()
@@ -175,7 +180,7 @@ function M.fix_current_stop()
         return
     end
     local new = current_stop:get_before()
-    local old = M.state().before or new
+    local old = M.before or new
     local current_line = api.nvim_get_current_line()
     if new ~= old and current_line:sub(1, #old) == old then
         local stop = M.stops[M.current_stop]
@@ -444,7 +449,7 @@ function M.clear_state()
     for _, stop in pairs(M.stops) do
         api.nvim_buf_del_extmark(0, shared.namespace, stop.mark)
     end
-    M.state().before = nil
+    M.before = false
     M.current_stop = 0
     M.stops = {}
     M.max_id = nil
