@@ -389,7 +389,7 @@ function M.can_expand()
 end
 
 function M.can_jump(dir)
-    local stops = buf.state().stops
+    local stops = buf.stops
     if dir >= 0 then
         return #stops > 0 and buf.current_stop <= #stops
     else

@@ -12,25 +12,19 @@ local M = {}
 M._state = {}
 
 setmetatable(M, {
-    __index = function(self, key)
-        if key == 'current_stop' then
-            return self.state().current_stop
-        elseif key == 'stops' then
-            return self.state().stops
-        else
-            return rawget(self, key)
-        end
-    end,
-    __newindex = function(self, key, value)
-        if key == 'current_stop' then
-            self.state().current_stop = value
-        elseif key == 'stops' then
-            self.state().stops = value
-        else
-            return rawset(self, key, value)
-        end
-    end,
-})
+        __index = function(self, key)
+            return self.state()[key] or rawget(self, key)
+        end,
+        __newindex = function(self, key, value)
+            if key == 'current_stop' then
+                self.state().current_stop = value
+            elseif key == 'stops' then
+                self.state().stops = value
+            else
+                return rawset(self, key, value)
+            end
+        end,
+    })
 
 local function add_mark(id, startrow, startcol, endrow, endcol, right_gravity, end_right_gravity)
     local mark = api.nvim_buf_set_extmark(0, shared.namespace, startrow, startcol, {
@@ -45,8 +39,8 @@ local function add_mark(id, startrow, startcol, endrow, endcol, right_gravity, e
 end
 
 local function get_children(number)
-    local value = M.state().stops[number]
-    for n, stop in ipairs(M.state().stops) do
+    local value = M.stops[number]
+    for n, stop in ipairs(M.stops) do
         if value.id == stop.spec.parent then
             return vim.list_extend({ n }, get_children(n))
         end
@@ -55,11 +49,11 @@ local function get_children(number)
 end
 
 local function get_parents(number)
-    local value = M.state().stops[number]
+    local value = M.stops[number]
     if not value.spec.parent then
         return {}
     end
-    for n, stop in ipairs(M.state().stops) do
+    for n, stop in ipairs(M.stops) do
         if stop.id == value.spec.parent and stop.spec.type == 'placeholder' then
             return vim.list_extend({ n }, get_parents(n))
         end
@@ -70,7 +64,7 @@ end
 local function activate_parents(number)
     local parents = get_parents(number)
     for _, n in ipairs(parents) do
-        local stop = M.state().stops[n]
+        local stop = M.stops[n]
         local from, to = stop:get_range()
         local mark_id = stop.mark
         local _ = add_mark(mark_id, from[1], from[2], to[1], to[2], false, true)
@@ -80,7 +74,7 @@ end
 local function deactivate_parents(number)
     local parents = get_parents(number)
     for _, n in ipairs(parents) do
-        local stop = M.state().stops[n]
+        local stop = M.stops[n]
         local from, to = stop:get_range()
         local mark_id = stop.mark
         local _ = add_mark(mark_id, from[1], from[2], to[1], to[2], true, true)
@@ -92,10 +86,10 @@ function M.clear_children(stop_num)
     local children = get_children(stop_num)
     table.sort(children)
     for i = #children, 1, -1 do
-        table.remove(M.state().stops, children[i])
+        table.remove(M.stops, children[i])
     end
     -- Reset current stop index
-    for i, stop in ipairs(M.state().stops) do
+    for i, stop in ipairs(M.stops) do
         if stop.id == current_stop.id and #children > 0 then
             M.current_stop = i
             break
@@ -116,7 +110,7 @@ end
 
 function M.add_stop(spec, pos)
     local function is_traversable()
-        for _, stop in ipairs(M.state().stops) do
+        for _, stop in ipairs(M.stops) do
             if stop.id == spec.id then
                 return false
             end
@@ -127,16 +121,15 @@ function M.add_stop(spec, pos)
     local startcol = spec.startpos[2]
     local endrow = spec.endpos[1] - 1
     local endcol = spec.endpos[2]
-    local stops = M.state().stops
     local smark = add_mark(nil, startrow, startcol, endrow, endcol, true, true)
-    table.insert(stops, pos, Stop.new({ id = spec.id, traversable = is_traversable(), mark = smark, spec = spec }))
-    M.state().stops = stops
+    table.insert(M.stops, pos,
+      Stop.new({ id = spec.id, traversable = is_traversable(), mark = smark, spec = spec }))
 end
 
 -- Change the extmarks to expand on change
 function M.activate_stop(number)
-    local value = M.state().stops[number]
-    for n, stop in ipairs(M.state().stops) do
+    local value = M.stops[number]
+    for n, stop in ipairs(M.stops) do
         if stop.id == value.id then
             local from, to = stop:get_range()
             local mark_id = stop.mark
@@ -157,8 +150,8 @@ end
 
 -- Change the extmarks NOT to expand on change
 function M.deactivate_stop(number)
-    local value = M.state().stops[number]
-    for n, stop in ipairs(M.state().stops) do
+    local value = M.stops[number]
+    for n, stop in ipairs(M.stops) do
         if stop.id == value.id then
             local from, to = stop:get_range()
             local mark_id = stop.mark
@@ -173,8 +166,7 @@ function M.update_state()
     if not current_stop then
         return
     end
-    local before = current_stop:get_before()
-    M.state().before = before
+    M.state().before = current_stop:get_before()
 end
 
 function M.fix_current_stop()
@@ -449,12 +441,12 @@ end
 -------------------------------------------------------------------------------
 
 function M.clear_state()
-    for _, stop in pairs(M.state().stops) do
+    for _, stop in pairs(M.stops) do
         api.nvim_buf_del_extmark(0, shared.namespace, stop.mark)
     end
-    M.state().current_stop = 0
-    M.state().stops = {}
     M.state().before = nil
+    M.current_stop = 0
+    M.stops = {}
     M.max_id = nil
     M.clear_autocmds()
 end
