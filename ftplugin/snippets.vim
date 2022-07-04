@@ -13,28 +13,8 @@ setlocal nospell
 " Use hard tabs
 setlocal noexpandtab softtabstop=0
 
-setlocal foldmethod=expr foldexpr=v:lua.SnippyFoldExpr()
+setlocal foldmethod=expr foldexpr=v:lua.require'snippy.ftplugin'.fold_expr()
 
-set foldtext=v:lua.SnippyFoldText()
+set foldtext=v:lua.require'snippy.ftplugin'.fold_text()
 
-lua << EOF
-function SnippyFoldText()
-    local line = vim.fn.getline(vim.v.foldstart)
-    local trigger = line:match('^%S+%s+(%S+)') or line
-    local desc = line:match('"(.*)"') or ''
-    local opts = line:match('"%s+(%S+)$') or ''
-    return string.format('%-15s%-40s%s', trigger, desc, opts)
-end
-function SnippyFoldExpr()
-    local line = function(n) return vim.fn.getline(vim.v.lnum + n) end
-    if line(0) == '' and line(1):match('^#') ~= nil then
-        return '>1'
-    elseif line(0) == '' and line(-1):match('^#') ~= nil then
-        return 0
-    elseif not line(0):match('^\t') and not line(0):match('^$') then
-        return '>1'
-    else
-        return 1
-    end
-end
-EOF
+nnoremap <buffer> gf :call v:lua.require'snippy.ftplugin'.goto_file()<cr>
