@@ -345,7 +345,7 @@ function M.mirror_stop(number, expanding)
     end
     for i, stop in ipairs(M.stops) do
         if i > number and stop.id == value.id then
-            M.mirrored[number] = true
+            M.mirrored[number] = value.id
             stop:set_text(expanding and '[?]' or text)
         end
     end
@@ -448,9 +448,6 @@ end
 -------------------------------------------------------------------------------
 
 function M.clear_state()
-    for n, _ in pairs(M.mirrored) do
-        M.mirror_stop(n)
-    end
     for _, stop in pairs(M.stops) do
         api.nvim_buf_del_extmark(0, shared.namespace, stop.mark)
     end
