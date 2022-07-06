@@ -333,7 +333,7 @@ end
 -- Mirror stops
 -------------------------------------------------------------------------------
 
-function M.mirror_stop(number)
+function M.mirror_stop(number, expanding)
     if number < 1 or number > #M.stops then
         return
     end
@@ -346,7 +346,7 @@ function M.mirror_stop(number)
     for i, stop in ipairs(M.stops) do
         if i > number and stop.id == value.id then
             M.mirrored[number] = true
-            stop:set_text(text)
+            stop:set_text(expanding and '[?]' or text)
         end
     end
     if value.spec.type == 'placeholder' then
