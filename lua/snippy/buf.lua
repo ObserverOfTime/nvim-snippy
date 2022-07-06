@@ -106,6 +106,7 @@ function M.state()
     if not M._state[bufnr] then
         M._state[bufnr] = {
             stops = {},
+            mirrored = {},
             current_stop = 0,
             before = false,
         }
@@ -344,6 +345,7 @@ function M.mirror_stop(number)
     end
     for i, stop in ipairs(M.stops) do
         if i > number and stop.id == value.id then
+            M.mirrored[number] = true
             stop:set_text(text)
         end
     end
@@ -446,12 +448,16 @@ end
 -------------------------------------------------------------------------------
 
 function M.clear_state()
+    for n, _ in pairs(M.mirrored) do
+        M.mirror_stop(n)
+    end
     for _, stop in pairs(M.stops) do
         api.nvim_buf_del_extmark(0, shared.namespace, stop.mark)
     end
     M.before = false
     M.current_stop = 0
     M.stops = {}
+    M.mirrored = {}
     M.max_id = nil
     M.clear_autocmds()
 end
