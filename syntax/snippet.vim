@@ -9,7 +9,7 @@ syn region snipEval start='`' end='\\\\`\|[^\\]`'
 syn match snipVariable '$\v(VISUAL|TM_\w+)'
 
 syn region snipChoice start='\${\d\+|' end='|}' contains=snipChoiceVal
-syn match snipChoiceVal '[|,]\zs[^,|]\+\ze[|,]' contained
+syn match snipChoiceVal '[|,]\zs[^,|]\+[^}]\ze[|,]' contained
 
 hi default link snipEscape    SpecialChar
 hi default link snipChoice    Special
