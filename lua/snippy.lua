@@ -347,7 +347,11 @@ function M.parse_snippet(snippet)
 end
 
 function M.expand_snippet(snippet, word)
-    vim.wo.foldenable = false
+    if vim.wo.foldenable then
+        local pos = fn.getcurpos()
+        vim.cmd('noautocmd normal! zv')
+        fn.setpos('.', pos)
+    end
     local current_line = api.nvim_get_current_line()
     local row, col = unpack(api.nvim_win_get_cursor(0))
     if fn.mode() ~= 'i' then
