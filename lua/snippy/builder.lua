@@ -129,9 +129,7 @@ function Builder:indent_lines(lines, is_expansion)
             if is_expansion and line ~= '' then
                 line = self.extra_indent .. line
             end
-            if line ~= '' then
-                line = self.indent .. line
-            end
+            line = self.indent .. line
         end
         lines[i] = line
     end
