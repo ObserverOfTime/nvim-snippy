@@ -466,6 +466,9 @@ function M.clear_autocmds()
             augroup snippy_local
             autocmd! * <buffer=%s>
             augroup END
+            if !v:lua.require'snippy'.is_active()
+              silent doautocmd <nomodeline> User SnippySnippetEnd
+            end
         ]],
         bufnr
     ))
