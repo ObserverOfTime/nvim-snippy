@@ -36,7 +36,7 @@ local function parse(text, from_pos)
         util.print_error(string.format('Missing closing backtick: %s', text))
         return ''
     end
-    return text
+    return text:gsub('\\`', '`')
 end
 
 function M.resolve_interpolations(text)
