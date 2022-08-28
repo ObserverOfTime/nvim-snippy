@@ -1,4 +1,5 @@
 local util = require('snippy.util')
+local cache = require('snippy.cache')
 
 local M = {}
 
@@ -9,9 +10,23 @@ local function eval(code, indent)
     return builder.result
 end
 
+local function get_expressions()
+    local valid = {}
+    local expressions = cache.expressions or cache.cache_expressions()
+    for _, scope in ipairs(cache.get_scopes()) do
+        if scope and expressions[scope] then
+            for k, v in pairs(expressions[scope]) do
+                valid[k] = v
+            end
+        end
+    end
+    return valid
+end
+
 local function parse(text, from_pos)
     local escaped = false
     local code, pos, start = '', from_pos - 1, 0
+    local expressions = get_expressions()
     for ch in string.gmatch(text:sub(from_pos), ".") do
         pos = pos + 1
         if escaped then
@@ -25,7 +40,11 @@ local function parse(text, from_pos)
             else
                 local pre = text:sub(1, start - 1)
                 local indent = pre:match('[ \t]*$')
-                text = pre .. eval(code:gsub('[ \n]+', ' '), indent) .. text:sub(pos + 1)
+                local expr = code:gsub('[ \n]+', ' ')
+                if expr:sub(1,2) == '&&' and expressions[expr:sub(3)] then
+                    expr = expressions[expr:sub(3)]
+                end
+                text = pre .. eval(expr, indent) .. text:sub(pos + 1)
                 return parse(text, start + 1)
             end
         elseif start > 0 then

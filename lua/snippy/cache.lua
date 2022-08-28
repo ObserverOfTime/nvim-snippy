@@ -4,6 +4,7 @@ local M = {}
 
 M.directories = nil
 M.snippets = nil
+M.expressions = nil
 M.scopes = {}
 M.importable = {}
 
@@ -21,16 +22,25 @@ function M.get_scopes()
 end
 
 function M.cache_snippets()
-    M.snippets = M.snippets or {}
     for _, reader in ipairs(require'snippy.shared'.readers) do
-        M.snippets = vim.tbl_extend('force', M.snippets, reader.read_snippets())
+        local s, e = reader.read_snippets()
+        M.snippets = vim.tbl_extend('force', M.snippets or {}, s)
+        M.expressions = vim.tbl_deep_extend('force', M.expressions or {}, e)
     end
     return M.snippets
+end
+
+function M.cache_expressions(expressions)
+    if not M.expressions then
+        M.cache_snippets()
+    end
+    return M.expressions
 end
 
 function M.clear_cache()
     M.directories = require'snippy.directories'.list_dirs()
     M.snippets = nil
+    M.expressions = nil
     M.scopes = {}
 end
 

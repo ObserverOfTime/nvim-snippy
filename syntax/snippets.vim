@@ -10,12 +10,14 @@ syn keyword snipKeyword extends imports importable version nextgroup=snipExtra c
 syn match snipExtra     '\s\+.*' contained
 
 syn match snipLine      '^snippet.*' contains=snipTrigger,snipDesc,snipOptions
+syn match snipExpr      '^expression.*' contains=snipTrigger
 syn match snipTrigger   '\s\+\S\+' contained nextgroup=snipDesc,snipOptions
 syn match snipDesc      '\s\+".*"' nextgroup=snipOptions contained
 syn match snipOptions   '\s\+[wib#s^_]\+$' contained
 syn match snipError     "^[^#vsei\t ].*$"
 
 hi default link snipLine      Identifier
+hi default link snipExpr      Identifier
 hi default link snipComment   Comment
 hi default link snipTrigger   Constant
 hi default link snipKeyword   Keyword

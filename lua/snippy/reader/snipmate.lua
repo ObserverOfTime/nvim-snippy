@@ -33,6 +33,7 @@ local function read_snippets_file(snippets_file, scope)
     local snips = {}
     local extends = {}
     local imports = {}
+    local expressions = {}
     local file = io.open(snippets_file)
     local lines = vim.split(file:read('*a'), '\n')
 
@@ -42,7 +43,7 @@ local function read_snippets_file(snippets_file, scope)
         end
         local basename = vim.fn.fnamemodify(snippets_file, ':t:r')
         cache.importable[scope][basename] = snippets_file
-        return {}, {}, {}
+        return {}, {}, {}, {}
     end
 
     if lines[#lines] == '' then
@@ -91,6 +92,24 @@ local function read_snippets_file(snippets_file, scope)
         }
     end
 
+    local function _parse_expression()
+      local line = lines[i]
+      local prefix = line:match('%s+(%S+)%s*')
+      assert(prefix, 'prefix is nil: ' .. line .. ', file: ' .. snippets_file)
+      i = i + 1
+      if i <= #lines then
+        line = lines[i]
+        if line:find('^%s+') then
+          expressions[prefix] = line:match("%S.*")
+        end
+        i = i + 1
+      end
+      -- read only the first line
+      while not lines[i]:find('^%S') do
+          i = i + 1
+      end
+    end
+
     while i <= #lines do
         local line = lines[i]
         if line:sub(1, 7) == 'snippet' then
@@ -104,6 +123,8 @@ local function read_snippets_file(snippets_file, scope)
         elseif line:sub(1, 7) == 'imports' then
             table.insert(imports, line:sub(8):match('%S+'))
             i = i + 1
+        elseif line:sub(1, 10) == 'expression' then
+            _parse_expression()
         elseif line:sub(1, 1) == '#' or vim.trim(line) == '' then
             -- Skip empty lines or comments
             i = i + 1
@@ -111,7 +132,7 @@ local function read_snippets_file(snippets_file, scope)
             error(string.format('Invalid line in snippets file %s: %s', snippets_file, line))
         end
     end
-    return snips, extends, imports
+    return snips, expressions, extends, imports
 end
 
 local function read_single_snippet_file(snippet_file, scope)
@@ -152,21 +173,24 @@ local function load_scope(scope, stack, files)
     local snips = {}
     local extends = {}
     local imports = {}
+    local expressions = {}
     for _, file in ipairs(files or list_files(scope)) do
         local result = {}
         local extended
         if file:match('.snippets$') then
-            result, extended, imports = read_snippets_file(file, scope)
+            result, expr, extended, imports = read_snippets_file(file, scope)
             extends = vim.list_extend(extends, extended)
         elseif file:match('.snippet$') then
             result = read_single_snippet_file(file, scope)
         end
         snips = vim.tbl_extend('force', snips, result)
+        expressions = vim.tbl_extend('force', expressions, expr)
     end
     for _, import in ipairs(imports) do
         if cache.importable[scope][import] then
-            local result, extended = read_snippets_file(cache.importable[scope][import])
+            local result, expr, extended = read_snippets_file(cache.importable[scope][import])
             extends = vim.list_extend(extends, extended)
+            expressions = vim.tbl_extend('force', expressions, expr)
             snips = vim.tbl_extend('force', snips, result)
         end
     end
@@ -182,7 +206,7 @@ local function load_scope(scope, stack, files)
         local result = load_scope(extended, vim.tbl_flatten({ stack, scope }))
         snips = vim.tbl_extend('keep', snips, result)
     end
-    return snips
+    return snips, expressions
 end
 
 function M.list_existing_files()
@@ -195,12 +219,12 @@ function M.list_existing_files()
 end
 
 function M.read_snippets()
-    local snips = {}
+    local snips, expressions = {}, {}
     local scopes = cache.get_scopes()
     for _, scope in ipairs(scopes) do
         if scope and scope ~= '' then
             if not cache.scopes[scope] then
-                cache.scopes[scope] = load_scope(scope, {})
+                cache.scopes[scope], expressions[scope] = load_scope(scope, {})
             end
             snips[scope] = cache.scopes[scope]
         end
@@ -208,12 +232,13 @@ function M.read_snippets()
     if fn.isdirectory('.snippets') == 1 then
       for _, scope in ipairs(scopes) do
         if scope and scope ~= '' then
-          snips[scope] = vim.tbl_extend('force', snips[scope],
-            load_scope(scope, {}, list_files(scope, '.snippets')))
+            local s, e = load_scope(scope, {}, list_files(scope, '.snippets'))
+            snips[scope] = vim.tbl_extend('force', snips[scope], s)
+            expressions[scope] = vim.tbl_extend('force', expressions[scope] or {}, e)
         end
       end
     end
-    return snips
+    return snips, expressions
 end
 
 return M
