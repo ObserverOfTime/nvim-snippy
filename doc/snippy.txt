@@ -154,32 +154,6 @@ For example, in a `cpp` file, writing >
     extends c
 <will load snippets for `c` files in addition to the ones for `cpp`.
 
-                                                           *snippy-expression*
-
-Instead of the `snippet` keyword, a line can start with the `expression`
-keyword, followed by the name of the expression.
-
-The following (indented) line is stored as a vim expression to be used inside
-backticks, for evaluation. The whole expression must reside in a single line.
-Following indented lines are ignored.
-
-When evaluated, it must be referenced alone, preceded by a double ampersand
-(`&&`). Example:
->
-    expression className
-        matchstr(getline(search('^\s*.*\(class\|struct\)', 'bn')), '\(class\|struct\)\s*\zs\w\+\ze')
-<
-Then you can use it this way:
->
-    snippet scon "static constructor" b
-        static `&&className`($1)
-        {
-            $2
-        }
-<
-Note: the double ampersand is used because `&` is also used for vim options,
-valid terms inside backticks.
-
                                           *snippy-imports* *snippy-importable*
 
 If the first line in the snippets file is just: >
@@ -309,7 +283,38 @@ Backtick blocks can span multiple lines (not if nested in placeholders!):
 		return x
 	end)(1)
 	`
-<                                                           *snippy-transform*
+<                                                           *snippy-expression*
+
+Instead of the `snippet` keyword, a line can start with the `expression`
+keyword, followed by the name of the expression.
+
+The following (indented) line is stored as a `vimL` expression to be used
+inside backticks, for evaluation. The whole expression must reside in a single
+line. Following indented lines are ignored.
+
+When evaluated, it must be referenced alone, preceded by a double ampersand
+(`&&`). Example:
+>
+    expression className
+        matchstr(getline(search('^\s*.*\(class\|struct\)', 'bn')), '\(class\|struct\)\s*\zs\w\+\ze')
+<
+Then you can use it this way:
+>
+    snippet con "constructor" b_
+        public `&&className`($1)
+        {
+            $2
+        }
+    snippet scon "static constructor" b_
+        static `&&className`($1)
+        {
+            $2
+        }
+<
+Note: the double ampersand is used because `&` is also used for vim options,
+valid terms inside backticks.
+
+                                                             *snippy-transform*
 
 Transformations are supported for tabstops and variables, with the caveat that
 Vim regular expressions are to be used instead of Javascript ones. The
