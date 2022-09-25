@@ -1,25 +1,26 @@
 local fn = vim.fn
 local list_dirs = require("snippy.directories").list_dirs
-local cache = require("snippy.cache")
+local getcurline = function(n) return fn.getline(vim.v.lnum + n) end
 
 local M = {}
 
 function M.fold_text()
     local line = fn.getline(vim.v.foldstart)
-    local trigger = line:match("^snippet%s+(%S+)") or line
-    local desc = line:match('"(.*)"') or ""
+    local trigger = line:match("^snippet%s+(%S+)") or line:match("^(expression)%s+%S+") or line
+    local desc = line:match("^expression%s+(%S+)") or line:match('"(.*)"') or ""
     local opts = line:match('"%s+(%S+)$') or ""
     return string.format("%-15s%-40s%s", trigger, desc, opts)
 end
 
 function M.fold_expr()
-    local line = function(n) return fn.getline(vim.v.lnum + n) end
-    local curline = line(0)
-    if curline:match("^[eivf]") then
+    local curline = getcurline(0)
+    if curline:match("^expr") then
+        return 1
+    elseif curline:match("^[eivf]") then
         return 0
-    elseif curline == "" and line(1):match("^#") ~= nil then
+    elseif curline == "" and getcurline(1):match("^#") ~= nil then
         return ">1"
-    elseif curline == "" and line(-1):match("^#") ~= nil then
+    elseif curline == "" and getcurline(-1):match("^#") ~= nil then
         return 0
     elseif not curline:match("^\t") and not curline:match("^$") then
         return ">1"

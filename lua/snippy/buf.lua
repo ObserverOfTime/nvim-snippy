@@ -273,7 +273,6 @@ end
 --- id comes first. If it's the same named placeholder, the one with a default
 --- value comes first.
 --- @param stops table: the unsorted tabstops
---- @return table: sorted tabstops
 local function sort_stops(stops)
     table.sort(stops, function(s1, s2)
         if s1.id == 0 then
